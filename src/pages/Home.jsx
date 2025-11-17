@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { BookOpen, LogIn, UserPlus, Shield } from 'lucide-react';
+import { BookOpen, LogIn, UserPlus } from 'lucide-react';
 
 const Home = () => {
   const { user, userData } = useAuthStore();
@@ -92,28 +92,6 @@ const Home = () => {
           </div>
         </div>
 
-               {/* Admin Login */}
-               <div className="card bg-gradient-to-r from-primary-600 to-primary-800 text-white">
-                 <div className="text-center">
-                   <div className="flex justify-center mb-4">
-                     <div className="p-3 bg-white/20 rounded-full">
-                       <Shield className="h-8 w-8" />
-                     </div>
-                   </div>
-                   <h2 className="text-2xl font-bold mb-2">Admin Login</h2>
-                   <p className="text-primary-100 mb-6">
-                     Access the admin dashboard to manage courses, students, and system settings
-                   </p>
-                   <Link
-                     to="/login?admin=true"
-                     className="btn bg-white text-primary-600 hover:bg-gray-100 w-full flex items-center justify-center space-x-2"
-                   >
-                     <Shield className="h-5 w-5" />
-                     <span>Admin Login</span>
-                   </Link>
-                 </div>
-               </div>
-
         {/* Features */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center">
@@ -125,7 +103,7 @@ const Home = () => {
           </div>
           <div className="text-center">
             <div className="p-3 bg-green-100 rounded-lg inline-block mb-3">
-              <Shield className="h-6 w-6 text-green-600" />
+              <BookOpen className="h-6 w-6 text-green-600" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Certified Learning</h3>
             <p className="text-sm text-gray-600">Earn certificates upon course completion</p>

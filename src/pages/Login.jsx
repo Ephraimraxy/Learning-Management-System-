@@ -1,28 +1,18 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { useAuthStore } from '../stores/authStore';
 import toast from 'react-hot-toast';
-import { BookOpen, AlertCircle, Shield } from 'lucide-react';
+import { BookOpen, AlertCircle } from 'lucide-react';
 
 const Login = () => {
-  const [searchParams] = useSearchParams();
-  const isAdminLogin = searchParams.get('admin') === 'true';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { setUser, userData } = useAuthStore();
-
-  // Pre-fill admin credentials if admin login
-  useEffect(() => {
-    if (isAdminLogin) {
-      setEmail('hoseaephraim50@gmail.com');
-      setPassword('112233');
-    }
-  }, [isAdminLogin]);
+  const { setUser } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -101,7 +91,7 @@ const Login = () => {
       setUser(user);
       toast.success('Logged in successfully!');
       
-      // Redirect based on role
+      // Redirect based on role (admins determined by Firestore role)
       if (isAdmin) {
         navigate('/admin/dashboard');
       } else {
@@ -127,28 +117,17 @@ const Login = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            {isAdminLogin ? (
-              <Shield className="h-12 w-12 text-primary-600" />
-            ) : (
-              <BookOpen className="h-12 w-12 text-primary-600" />
-            )}
+            <BookOpen className="h-12 w-12 text-primary-600" />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {isAdminLogin ? 'Admin Login' : 'Sign in to your account'}
+            Sign in to your account
           </h2>
-          {!isAdminLogin && (
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Or{' '}
-              <Link to="/signup" className="font-medium text-primary-600 hover:text-primary-500">
-                create a new account
-              </Link>
-            </p>
-          )}
-          {isAdminLogin && (
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Use your admin credentials to access the dashboard
-            </p>
-          )}
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Or{' '}
+            <Link to="/signup" className="font-medium text-primary-600 hover:text-primary-500">
+              create a new account
+            </Link>
+          </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
@@ -192,35 +171,14 @@ const Login = () => {
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
-            {!isAdminLogin && (
-              <div className="flex items-center space-x-2 text-sm text-gray-600 bg-green-50 p-3 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                <p className="text-xs">
-                  Make sure you've verified your email address before signing in.
-                </p>
-              </div>
-            )}
-            {isAdminLogin && (
-              <Link
-                to="/"
-                className="text-center text-sm text-primary-600 hover:text-primary-500 block"
-              >
-                ← Back to Home
-              </Link>
-            )}
+            <div className="flex items-center space-x-2 text-sm text-gray-600 bg-green-50 p-3 rounded-lg">
+              <AlertCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+              <p className="text-xs">
+                Make sure you've verified your email address before signing in.
+              </p>
+            </div>
           </div>
         </form>
-        {!isAdminLogin && (
-          <div className="text-center">
-            <Link
-              to="/login?admin=true"
-              className="text-sm text-primary-600 hover:text-primary-500 flex items-center justify-center space-x-1"
-            >
-              <Shield className="h-4 w-4" />
-              <span>Admin Login</span>
-            </Link>
-          </div>
-        )}
       </div>
     </div>
   );

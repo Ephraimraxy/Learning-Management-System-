@@ -33,7 +33,6 @@ import PaymentCheckout from './pages/PaymentCheckout';
 import ProgrammingExercise from './pages/ProgrammingExercise';
 import Transactions from './pages/Transactions';
 import Evaluations from './pages/Evaluations';
-import AdminSetup from './pages/AdminSetup';
 import AdminDashboard from './pages/AdminDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 import Skills from './pages/Skills';
@@ -44,6 +43,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   const { user, userData, loading, initializeAuth } = useAuthStore();
+  const hasPendingVerification = typeof window !== 'undefined' && sessionStorage.getItem('pendingVerificationEmail');
+  const shouldRedirectToDashboard = Boolean(user && !hasPendingVerification);
 
   useEffect(() => {
     initializeAuth();
@@ -65,13 +66,12 @@ function App() {
       }}
     >
       <Routes>
-        <Route path="/login" element={!user ? <Login /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
-        <Route path="/signup" element={!user ? <Signup /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
+        <Route path="/login" element={!shouldRedirectToDashboard ? <Login /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
+        <Route path="/signup" element={!shouldRedirectToDashboard ? <Signup /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
         <Route path="/verify-email" element={<EmailVerification />} />
-        <Route path="/admin-setup" element={<AdminSetup />} />
         
         {/* Home page without layout for unauthenticated users */}
-        <Route path="/" element={!user ? <Home /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} replace />} />
+        <Route path="/" element={!shouldRedirectToDashboard ? <Home /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} replace />} />
         
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<ProtectedRoute><Home /></ProtectedRoute>} />
