@@ -194,3 +194,4 @@ const LiveClassModal = ({ isOpen, onClose, batchId, classData = null, onSuccess 
 
 export default LiveClassModal;
 
+
