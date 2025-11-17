@@ -42,6 +42,7 @@ You need to set up a backend API to send emails. See `backend-email-setup.md` fo
 
 1. Create a backend server with the email endpoint
 2. Set environment variable `VITE_API_URL` to your backend URL
+3. Set `VITE_USE_EMAIL_BACKEND=true` only when the backend email service is running (defaults to local fallback)
 3. The backend should accept POST requests to `/api/send-otp` with `{ email, otpCode }`
 
 ### Step 2: Environment Variables
@@ -50,11 +51,13 @@ Create a `.env` file in `lms-react-firebase`:
 
 ```env
 VITE_API_URL=http://localhost:3001
+VITE_USE_EMAIL_BACKEND=true
 ```
 
 For production:
 ```env
 VITE_API_URL=https://your-backend-domain.com
+VITE_USE_EMAIL_BACKEND=true
 ```
 
 ### Step 3: Gmail App Password

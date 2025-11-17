@@ -8,6 +8,7 @@ Create `lms-react-firebase/.env` with:
 
 ```env
 VITE_API_URL=http://localhost:3001
+VITE_USE_EMAIL_BACKEND=false
 ```
 
 ## Step 2: Create Backend `.env` File
@@ -28,6 +29,7 @@ NODE_ENV=development
 # Root .env
 @"
 VITE_API_URL=http://localhost:3001
+VITE_USE_EMAIL_BACKEND=false
 "@ | Out-File -FilePath .env -Encoding utf8
 
 # Backend .env
@@ -42,7 +44,10 @@ NODE_ENV=development
 ### Linux/Mac:
 ```bash
 # Root .env
-echo "VITE_API_URL=http://localhost:3001" > .env
+{
+echo "VITE_API_URL=http://localhost:3001"
+echo "VITE_USE_EMAIL_BACKEND=false"
+} > .env
 
 # Backend .env
 cat > backend/.env << EOF

@@ -4,6 +4,11 @@
 // Note: For production, you MUST use a backend service (Node.js/Express/Firebase Functions) to send emails
 // Client-side JavaScript cannot directly send SMTP emails for security reasons
 
+const shouldUseBackendEmail = () => {
+  const flag = import.meta.env.VITE_USE_EMAIL_BACKEND ?? process.env.REACT_APP_USE_EMAIL_BACKEND;
+  return String(flag).toLowerCase() === 'true';
+};
+
 export const sendOTPEmail = async (email, otpCode) => {
   try {
     // Store OTP in Firestore for validation
@@ -23,8 +28,9 @@ export const sendOTPEmail = async (email, otpCode) => {
     
     // Try to send via backend API if available
     const API_URL = import.meta.env.VITE_API_URL || process.env.REACT_APP_API_URL;
+    const useBackend = shouldUseBackendEmail() && Boolean(API_URL);
     
-    if (API_URL) {
+    if (useBackend) {
       try {
         const response = await fetch(`${API_URL}/api/send-otp`, {
           method: 'POST',
@@ -38,11 +44,14 @@ export const sendOTPEmail = async (email, otpCode) => {
           return { success: true, message: 'OTP code sent to your email!' };
         }
       } catch (apiError) {
-        // Only log in development mode
         if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
-          console.warn('Backend API not available, using fallback:', apiError);
+          console.warn('Backend API not available, falling back to local OTP logging:', apiError);
         }
       }
+    } else if (API_URL && (import.meta.env.DEV || process.env.NODE_ENV === 'development')) {
+      console.info('Skipping backend email send because VITE_USE_EMAIL_BACKEND is not true. Set it to "true" when your email service is running.');
+    } else if (!API_URL && shouldUseBackendEmail()) {
+      console.warn('VITE_USE_EMAIL_BACKEND is true but no API URL configured. Please set VITE_API_URL or REACT_APP_API_URL.');
     }
     
     // Fallback: For development, log OTP to console (only in development)
