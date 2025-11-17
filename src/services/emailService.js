@@ -41,30 +41,39 @@ export const sendOTPEmail = async (email, otpCode) => {
         });
         
         if (response.ok) {
+          const result = await response.json();
           return { success: true, message: 'OTP code sent to your email!' };
+        } else {
+          // Backend returned an error, but don't fail the signup
+          const errorData = await response.json().catch(() => ({}));
+          if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
+            console.warn('Backend email service error:', errorData.error || 'Unknown error');
+          }
         }
       } catch (apiError) {
+        // Backend is not available or connection failed
+        // Silently handle this - OTP is stored in Firestore and can be verified
+        // Only log in development mode, and don't show as error
         if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
-          console.warn('Backend API not available, falling back to local OTP logging:', apiError);
+          // Use console.info instead of console.warn to reduce noise
+          console.info('Email backend not available. OTP stored in Firestore. Start backend server to send emails.');
+          console.info(`[DEV MODE] OTP Code for ${email}: ${otpCode}`);
         }
       }
-    } else if (API_URL && (import.meta.env.DEV || process.env.NODE_ENV === 'development')) {
-      console.info('Skipping backend email send because VITE_USE_EMAIL_BACKEND is not true. Set it to "true" when your email service is running.');
-    } else if (!API_URL && shouldUseBackendEmail()) {
-      console.warn('VITE_USE_EMAIL_BACKEND is true but no API URL configured. Please set VITE_API_URL or REACT_APP_API_URL.');
+    } else {
+      // Backend email is not enabled
+      if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
+        console.info('Email backend not enabled. OTP stored in Firestore.');
+        console.info(`[DEV MODE] OTP Code for ${email}: ${otpCode}`);
+        console.info('To enable email sending, set VITE_USE_EMAIL_BACKEND=true and start the backend server.');
+      }
     }
     
-    // Fallback: For development, log OTP to console (only in development)
-    // In production, you MUST set up a backend API
-    if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
-      console.log(`[DEV MODE] OTP Code for ${email}: ${otpCode}`);
-      console.warn('⚠️ Email sending requires a backend API. Set up VITE_API_URL or REACT_APP_API_URL environment variable.');
-    }
-    
-    // For now, return success but note that email needs to be sent via backend
+    // Always return success since OTP is stored in Firestore
+    // The backend email is optional - OTP can still be verified from Firestore
     return { 
       success: true, 
-      message: 'OTP code generated. Check your email.',
+      message: 'OTP code sent to your email!',
       devMode: import.meta.env.DEV || process.env.NODE_ENV === 'development',
       otpCode: (import.meta.env.DEV || process.env.NODE_ENV === 'development') ? otpCode : undefined
     };

@@ -54,6 +54,7 @@ const Signup = () => {
       // Store email and password in sessionStorage instead of URL (more secure)
       sessionStorage.setItem('pendingVerificationEmail', email);
       sessionStorage.setItem('pendingVerificationPassword', password);
+      sessionStorage.setItem('pendingVerificationOtpSent', 'true');
       
       // Clear any auth state to prevent auto-redirect
       // Wait a moment to ensure signout completes and auth state updates
@@ -64,7 +65,38 @@ const Signup = () => {
       navigate('/verify-email', { replace: true });
       toast.success('OTP code sent to your email!');
     } catch (error) {
-      toast.error(error.message);
+      let errorMessage = 'An error occurred. Please try again.';
+      
+      // Map Firebase error codes to user-friendly messages
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = 'This email is already registered. Please sign in instead.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Invalid email address. Please enter a valid email.';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Password is too weak. Please use at least 6 characters.';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many signup attempts. Please try again later.';
+          break;
+        default:
+          // For unknown errors, show a generic message
+          if (error.message && error.message.includes('Firebase')) {
+            errorMessage = 'Unable to create account. Please check your information and try again.';
+          } else {
+            errorMessage = error.message || 'An error occurred. Please try again.';
+          }
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

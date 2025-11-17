@@ -98,14 +98,43 @@ const Login = () => {
         navigate('/student/dashboard');
       }
     } catch (error) {
-      let errorMessage = error.message;
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email address.';
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address.';
+      let errorMessage = 'An error occurred. Please try again.';
+      
+      // Map Firebase error codes to user-friendly messages
+      switch (error.code) {
+        case 'auth/user-not-found':
+          errorMessage = 'No account found with this email address. Please sign up first.';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'Incorrect password. Please check your password and try again.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Invalid email address. Please enter a valid email.';
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+          break;
+        case 'auth/user-disabled':
+          errorMessage = 'This account has been disabled. Please contact support.';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many failed login attempts. Please try again later.';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'This sign-in method is not enabled. Please contact support.';
+          break;
+        default:
+          // For unknown errors, show a generic message
+          if (error.message && error.message.includes('Firebase')) {
+            errorMessage = 'Unable to sign in. Please check your email and password.';
+          } else {
+            errorMessage = error.message || 'An error occurred. Please try again.';
+          }
       }
+      
       toast.error(errorMessage);
     } finally {
       setLoading(false);
