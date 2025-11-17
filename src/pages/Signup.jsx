@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
+import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../config/firebase';
 import { sendOTPEmail, generateOTP } from '../services/emailService';
 import toast from 'react-hot-toast';
-import { BookOpen, Mail } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -19,49 +18,99 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      // Check if email is already registered (query users collection by email)
+      const usersQuery = query(collection(db, 'users'), where('email', '==', email));
+      const usersSnapshot = await getDocs(usersQuery);
+      
+      if (!usersSnapshot.empty) {
+        const userDoc = usersSnapshot.docs[0];
+        const userData = userDoc.data();
+        // Check if it's a verified account
+        if (userData.registered && userData.status === 'active') {
+          toast.error('This email is already registered. Please sign in instead.');
+          setLoading(false);
+          return;
+        }
+        // If pending/not verified, allow re-signup (will overwrite temporary data)
+      }
+
+      // Check if there's already a pending signup for this email
+      const pendingSignupDoc = await getDoc(doc(db, 'pendingSignups', email));
+      if (pendingSignupDoc.exists()) {
+        const pendingData = pendingSignupDoc.data();
+        const createdAt = new Date(pendingData.createdAt);
+        const now = new Date();
+        const hoursSinceCreation = (now - createdAt) / (1000 * 60 * 60);
+        
+        // If pending signup is less than 24 hours old, allow resending OTP
+        if (hoursSinceCreation < 24) {
+          // Generate new OTP
+          const otpCode = generateOTP();
+          
+          // Update pending signup with new data
+          await setDoc(doc(db, 'pendingSignups', email), {
+            name,
+            email,
+            password, // Store encrypted or hashed in production
+            otpCode,
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+          }, { merge: true });
+          
+          // Send OTP email
+          const emailResult = await sendOTPEmail(email, otpCode);
+          
+          if (!emailResult.success) {
+            toast.error('Failed to send verification email. Please try again.');
+            setLoading(false);
+            return;
+          }
+          
+          // Store in sessionStorage for verification page
+          sessionStorage.setItem('pendingVerificationEmail', email);
+          sessionStorage.setItem('pendingVerificationPassword', password);
+          sessionStorage.setItem('pendingVerificationOtpSent', 'true');
+          
+          navigate('/verify-email', { replace: true });
+          toast.success('New OTP code sent to your email!');
+          setLoading(false);
+          return;
+        }
+      }
 
       // Generate OTP code
       const otpCode = generateOTP();
+
+      // Store signup data temporarily in Firestore (NOT creating Firebase Auth account yet)
+      // This will be used to create the account AFTER OTP verification
+      await setDoc(doc(db, 'pendingSignups', email), {
+        name,
+        email,
+        password, // Store encrypted or hashed in production - for now storing plaintext temporarily
+        otpCode,
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours expiry
+      });
 
       // Send OTP email
       const emailResult = await sendOTPEmail(email, otpCode);
       
       if (!emailResult.success) {
-        // If email sending fails, delete the user account
-        await user.delete();
+        // If email sending fails, delete the pending signup
+        await setDoc(doc(db, 'pendingSignups', email), {
+          deleted: true,
+        }, { merge: true });
         toast.error('Failed to send verification email. Please try again.');
         setLoading(false);
         return;
       }
 
-      // Create a PENDING user document in Firestore (not fully registered yet)
-      // This document will be activated only after OTP verification
-      await setDoc(doc(db, 'users', user.uid), {
-        name,
-        email,
-        role: 'student',
-        emailVerified: false,
-        status: 'pendingVerification', // Account is pending until OTP verified
-        createdAt: new Date().toISOString(),
-        registered: false, // Not fully registered until OTP verified
-      });
-
-      // Sign out the user immediately - they need to verify OTP first
-      await auth.signOut();
-      
-      // Store email and password in sessionStorage instead of URL (more secure)
+      // Store email and password in sessionStorage for verification page
       sessionStorage.setItem('pendingVerificationEmail', email);
       sessionStorage.setItem('pendingVerificationPassword', password);
       sessionStorage.setItem('pendingVerificationOtpSent', 'true');
       
-      // Clear any auth state to prevent auto-redirect
-      // Wait a moment to ensure signout completes and auth state updates
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Redirect to OTP verification page (email/password stored in sessionStorage, not URL)
-      // Use replace: true to prevent back navigation issues
+      // Redirect to OTP verification page
       navigate('/verify-email', { replace: true });
       toast.success('OTP code sent to your email!');
     } catch (error) {
