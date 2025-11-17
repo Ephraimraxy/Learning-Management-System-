@@ -68,9 +68,10 @@ concurrently "cd backend && npm start" "npm run dev"
 - Update `VITE_API_URL` in `.env` to match
 
 ### Email Not Sending
-- Check Gmail App Password is correct in `backend/.env`
+- Check Gmail App Password is correct in `backend/.env` (should be without spaces: `ukgnevfdewwcjwwq`)
 - Verify Gmail account has 2-Step Verification enabled
 - Check backend console for error messages
+- Ensure `VITE_USE_EMAIL_BACKEND=true` in frontend `.env`
 
 ### Frontend Can't Connect
 - Ensure backend is running on port 3001

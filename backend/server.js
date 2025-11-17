@@ -8,11 +8,19 @@ app.use(cors());
 app.use(express.json());
 
 // Configure nodemailer with Gmail
+const gmailUser = process.env.GMAIL_USER;
+const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+
+if (!gmailUser || !gmailAppPassword) {
+  console.error('❌ Gmail credentials not configured! Please set GMAIL_USER and GMAIL_APP_PASSWORD in .env file');
+  process.exit(1);
+}
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.GMAIL_USER || 'hoseaephraim50@gmail.com',
-    pass: process.env.GMAIL_APP_PASSWORD || 'ukgn evfd ewwc jwwq' // Gmail App Password
+    user: gmailUser,
+    pass: gmailAppPassword.replace(/\s+/g, '') // Remove any spaces from app password
   }
 });
 
@@ -54,7 +62,7 @@ app.post('/api/send-otp', async (req, res) => {
   }
   
   const mailOptions = {
-    from: `"LMS" <${process.env.GMAIL_USER || 'hoseaephraim50@gmail.com'}>`,
+    from: `"LMS" <${gmailUser}>`,
     to: email,
     subject: 'LMS - Email Verification Code',
     html: `
@@ -160,7 +168,7 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`🚀 LMS Email Service running on port ${PORT}`);
-  console.log(`📧 Email configured for: ${process.env.GMAIL_USER || 'hoseaephraim50@gmail.com'}`);
+  console.log(`📧 Email configured for: ${gmailUser}`);
   console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
   console.log(`📬 Send OTP endpoint: http://localhost:${PORT}/api/send-otp`);
 });
