@@ -1,37 +1,78 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
+const sgMail = require('@sendgrid/mail');
 require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Configure nodemailer with Gmail
+// Email configuration
 const gmailUser = process.env.GMAIL_USER;
 const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+const sendGridApiKey = process.env.SENDGRID_API_KEY;
+const sendGridFromEmail = process.env.SENDGRID_FROM_EMAIL || gmailUser;
 
-if (!gmailUser || !gmailAppPassword) {
-  console.error('❌ Gmail credentials not configured! Please set GMAIL_USER and GMAIL_APP_PASSWORD in .env file');
-  process.exit(1);
-}
+let sendEmail;
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: gmailUser,
-    pass: gmailAppPassword.replace(/\s+/g, '') // Remove any spaces from app password
-  }
-});
+if (sendGridApiKey) {
+  // Prefer SendGrid when API key is present (better for PaaS like Railway)
+  sgMail.setApiKey(sendGridApiKey.trim());
+  console.log('✅ SendGrid email transport configured');
 
-// Verify transporter configuration
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error('Email transporter error:', error);
+  sendEmail = async ({ to, subject, html, text }) => {
+    const msg = {
+      to,
+      from: sendGridFromEmail,
+      subject,
+      html,
+      text,
+    };
+    await sgMail.send(msg);
+  };
+} else {
+  if (!gmailUser || !gmailAppPassword) {
+    console.error('❌ No email provider configured. Set SENDGRID_API_KEY or GMAIL_USER/GMAIL_APP_PASSWORD.');
+    // Don't exit hard in PaaS; allow health checks to work, but all send attempts will fail.
+    sendEmail = async () => {
+      throw new Error('Email provider not configured on server');
+    };
   } else {
-    console.log('✅ Email server is ready to send messages');
+    const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+    const smtpPort = Number(process.env.SMTP_PORT) || 465;
+    const smtpUser = process.env.SMTP_USER || gmailUser;
+    const smtpPass = (process.env.SMTP_PASS || gmailAppPassword).replace(/\s+/g, '');
+
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+    });
+
+    transporter.verify((error) => {
+      if (error) {
+        console.error('Email transporter error:', error);
+      } else {
+        console.log('✅ SMTP email server is ready to send messages');
+      }
+    });
+
+    sendEmail = async ({ to, subject, html, text }) => {
+      await transporter.sendMail({
+        from: `"LMS" <${smtpUser}>`,
+        to,
+        subject,
+        html,
+        text,
+      });
+    };
   }
-});
+}
 
 // OTP Email Sending Endpoint
 app.post('/api/send-otp', async (req, res) => {
@@ -61,11 +102,8 @@ app.post('/api/send-otp', async (req, res) => {
     });
   }
   
-  const mailOptions = {
-    from: `"LMS" <${gmailUser}>`,
-    to: email,
-    subject: 'LMS - Email Verification Code',
-    html: `
+  const subject = 'LMS - Email Verification Code';
+  const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -122,17 +160,21 @@ app.post('/api/send-otp', async (req, res) => {
         </table>
       </body>
       </html>
-    `,
-    text: `LMS Email Verification\n\nYour verification code is: ${otpCode}\n\nThis code will expire in 15 minutes.\n\nIf you didn't request this code, please ignore this email.\n\n© 2025 LMS - Learning Management System`
-  };
-  
+      `;
+
+  const text = `LMS Email Verification\n\nYour verification code is: ${otpCode}\n\nThis code will expire in 15 minutes.\n\nIf you didn't request this code, please ignore this email.\n\n© 2025 LMS - Learning Management System`;
+
   try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ OTP email sent successfully to ${email} - Message ID: ${info.messageId}`);
+    if (!sendEmail) {
+      throw new Error('Email service not initialized');
+    }
+
+    await sendEmail({ to: email, subject, html, text });
+    console.log(`✅ OTP email sent successfully to ${email}`);
     res.json({ 
       success: true, 
       message: 'OTP sent successfully',
-      messageId: info.messageId
+      provider: sendGridApiKey ? 'sendgrid' : 'smtp'
     });
   } catch (error) {
     console.error('❌ Error sending email:', error);
