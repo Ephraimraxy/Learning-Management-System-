@@ -22,30 +22,9 @@ export const useAuthStore = create((set) => ({
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            // Sync email verification status from Firebase Auth
-            const updatedUserData = {
-              ...userData,
-              emailVerified: user.emailVerified,
-            };
-            
-            // If email was just verified and account was pending, activate it
-            if (user.emailVerified && userData.status === 'pendingVerification' && userData.role !== 'admin' && userData.role !== 'instructor') {
-              updatedUserData.status = 'active';
-              updatedUserData.registered = true;
-              updatedUserData.verifiedAt = new Date().toISOString();
-            }
-            
-            // Update Firestore if email verification status changed or account needs activation
-            if (userData.emailVerified !== user.emailVerified || 
-                (user.emailVerified && userData.status === 'pendingVerification' && userData.role !== 'admin' && userData.role !== 'instructor')) {
-              try {
-                await setDoc(doc(db, 'users', user.uid), updatedUserData, { merge: true });
-              } catch (updateError) {
-                console.warn('Failed to update email verification status:', updateError);
-                // Continue anyway - this is not critical
-              }
-            }
-            set({ userData: updatedUserData });
+            // Trust Firestore's emailVerified/status (set by our OTP flow),
+            // do not override with Firebase Auth's emailVerified flag
+            set({ userData });
           } else {
             // User document doesn't exist - check if it's admin first
             let userData = null;
