@@ -39,6 +39,7 @@ import Skills from './pages/Skills';
 import Coupons from './pages/Coupons';
 import CertificateRequests from './pages/CertificateRequests';
 import EmailVerification from './pages/EmailVerification';
+import LiveClassroom from './pages/LiveClassroom';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -111,6 +112,7 @@ function App() {
           <Route path="/coupons" element={<ProtectedRoute><Coupons /></ProtectedRoute>} />
           <Route path="/certificate-requests" element={<ProtectedRoute><CertificateRequests /></ProtectedRoute>} />
           <Route path="/evaluations" element={<ProtectedRoute><Evaluations /></ProtectedRoute>} />
+          <Route path="/live-classes/:classId" element={<ProtectedRoute><LiveClassroom /></ProtectedRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

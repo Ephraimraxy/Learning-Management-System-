@@ -1,0 +1,7 @@
+body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin: 0; padding: 0; background:#f7fafc; color:#111827; }
+.app { max-width:1100px; margin:24px auto; padding:20px; }
+.header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.grid { display:flex; gap:12px; flex-wrap:wrap; }
+.video-tile { background:#000; width:320px; height:240px; display:flex; align-items:center; justify-content:center; color:#fff; }
+.controls { margin-top:12px; }
+button { padding:8px 12px; border-radius:6px; border:1px solid #ccc; background:#fff; cursor:pointer; }

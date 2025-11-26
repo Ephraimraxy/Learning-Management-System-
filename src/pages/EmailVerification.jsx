@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { verifyOTP, sendOTPEmail, generateOTP } from '../services/emailService';
 import { useAuthStore } from '../stores/authStore';
+import { decryptValue } from '../utils/encryption';
 
 // Prevent auto-redirect during verification
 import toast from 'react-hot-toast';
@@ -17,20 +18,41 @@ const EmailVerification = () => {
   const { setUser, user: currentUser, userData } = useAuthStore();
   const email = searchParams.get('email') || sessionStorage.getItem('pendingVerificationEmail');
   const [password, setPassword] = useState(sessionStorage.getItem('pendingVerificationPassword') || '');
-  const [otpPrefilled, setOtpPrefilled] = useState(sessionStorage.getItem('pendingVerificationOtpSent') === 'true');
   const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [verified, setVerified] = useState(false);
+  const [pendingSignupData, setPendingSignupData] = useState(null);
   const otpSentRef = useRef(false);
+  const clearVerificationSession = () => {
+    sessionStorage.removeItem('pendingVerificationEmail');
+    sessionStorage.removeItem('pendingVerificationPassword');
+    sessionStorage.removeItem('pendingVerificationOtpSent');
+  };
 
-  // Load password from sessionStorage if not in URL
   useEffect(() => {
-    const storedPassword = sessionStorage.getItem('pendingVerificationPassword');
-    if (storedPassword) {
-      setPassword(storedPassword);
-    }
-  }, []);
+    const fetchPendingSignup = async () => {
+      if (!email) return;
+      try {
+        const pendingDoc = await getDoc(doc(db, 'pendingSignups', email));
+        if (pendingDoc.exists()) {
+          const data = pendingDoc.data();
+          setPendingSignupData(data);
+          if (!password && data.passwordEncrypted) {
+            const decrypted = decryptValue(data.passwordEncrypted);
+            if (decrypted) {
+              setPassword(decrypted);
+              sessionStorage.setItem('pendingVerificationPassword', decrypted);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load pending signup data:', error);
+      }
+    };
+
+    fetchPendingSignup();
+  }, [email]);
 
   const sendNewOTP = async (isResend = false) => {
     if (!email) return;
@@ -45,8 +67,6 @@ const EmailVerification = () => {
       
       if (result.success) {
         toast.success(isResend ? 'New OTP code sent to your email!' : 'OTP code sent to your email!');
-        sessionStorage.setItem('pendingVerificationOtpSent', 'true');
-        setOtpPrefilled(true);
         // For development: show OTP in console and toast (only in dev mode)
         if (result.devMode && (import.meta.env.DEV || process.env.NODE_ENV === 'development')) {
           console.log(`[DEV] OTP Code for ${email}: ${otp}`);
@@ -69,24 +89,13 @@ const EmailVerification = () => {
 
   // Send OTP only once when component mounts with email
   useEffect(() => {
-    if (otpPrefilled && !otpSentRef.current) {
-      otpSentRef.current = true;
+    if (!email || verified || otpSentRef.current) {
+      return;
     }
-    if (email && !verified && !currentUser && !otpSentRef.current) {
-      sendNewOTP(false);
-    }
+    sendNewOTP(false);
+    otpSentRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email, verified, currentUser, otpPrefilled]); // Only depend on essentials to prevent multiple sends
-
-  // Prevent auto-redirect if user accidentally gets logged in during verification
-  useEffect(() => {
-    if (currentUser && email && !verified) {
-      // User got logged in but still needs to verify - sign them out immediately
-      signOut(auth).catch(() => {
-        // Ignore errors
-      });
-    }
-  }, [currentUser, email, verified]);
+  }, [email, verified]);
 
   // Clean up session storage on unmount if verification not completed
   useEffect(() => {
@@ -116,29 +125,35 @@ const EmailVerification = () => {
 
     setLoading(true);
     try {
-      // First verify the OTP
       const result = await verifyOTP(email, otpCode);
       
       if (result.success) {
         setVerified(true);
         toast.success('Email verified successfully!');
         
-        // Check if this is a new signup (has pending signup data)
         const pendingSignupDoc = await getDoc(doc(db, 'pendingSignups', email));
+        let pendingData = null;
+        let resolvedPassword = password;
+
+        if (pendingSignupDoc.exists()) {
+          pendingData = pendingSignupDoc.data();
+          if (!resolvedPassword && pendingData.passwordEncrypted) {
+            const decrypted = decryptValue(pendingData.passwordEncrypted);
+            if (decrypted) {
+              resolvedPassword = decrypted;
+              setPassword(decrypted);
+            }
+          }
+        }
         
-        if (pendingSignupDoc.exists() && password) {
-          // This is a new signup - create account NOW after verification
-          const pendingData = pendingSignupDoc.data();
-          
+        if (pendingSignupDoc.exists() && resolvedPassword) {
           try {
-            // Create Firebase Auth account (only after OTP verification)
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const userCredential = await createUserWithEmailAndPassword(auth, email, resolvedPassword);
             const user = userCredential.user;
             
-            // Create Firestore user document (only after verification)
             await setDoc(doc(db, 'users', user.uid), {
-              name: pendingData.name || name,
-              email: email,
+              name: pendingData?.name || email.split('@')[0],
+              email,
               role: 'student',
               emailVerified: true,
               status: 'active',
@@ -147,40 +162,30 @@ const EmailVerification = () => {
               verifiedAt: new Date().toISOString(),
             });
             
-            // Clean up temporary signup data
             await deleteDoc(doc(db, 'pendingSignups', email));
+            setPendingSignupData(null);
             
-            // Set user in auth store
             setUser(user);
             toast.success('Account created and logged in successfully!');
-            
-            // Clear session storage
-            sessionStorage.removeItem('pendingVerificationEmail');
-            sessionStorage.removeItem('pendingVerificationPassword');
-            sessionStorage.removeItem('pendingVerificationOtpSent');
-            
-            // Redirect to student dashboard (new signups are always students)
+            clearVerificationSession();
             navigate('/student/dashboard', { replace: true });
           } catch (createError) {
             console.error('Account creation failed:', createError);
-            
-            // Handle specific errors
             let errorMessage = 'Failed to create account. Please try again.';
             if (createError.code === 'auth/email-already-in-use') {
               errorMessage = 'This email is already registered. Please sign in instead.';
-              // Clean up pending signup since account already exists
               await deleteDoc(doc(db, 'pendingSignups', email));
             }
-            
             toast.error(errorMessage);
+            clearVerificationSession();
             setTimeout(() => {
               navigate('/login', { replace: true });
             }, 2000);
           }
-        } else if (password) {
+        } else if (resolvedPassword) {
           // This is an existing user trying to verify (shouldn't happen with new flow, but handle it)
           try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const userCredential = await signInWithEmailAndPassword(auth, email, resolvedPassword);
             const user = userCredential.user;
             
             // Update existing user document
@@ -197,10 +202,7 @@ const EmailVerification = () => {
             setUser(user);
             toast.success('Email verified and logged in successfully!');
             
-            // Clear session storage
-            sessionStorage.removeItem('pendingVerificationEmail');
-            sessionStorage.removeItem('pendingVerificationPassword');
-            sessionStorage.removeItem('pendingVerificationOtpSent');
+            clearVerificationSession();
             
             // Redirect based on role
             const userData = userDoc.exists() ? userDoc.data() : {};
@@ -209,6 +211,7 @@ const EmailVerification = () => {
           } catch (loginError) {
             console.error('Auto-login failed:', loginError);
             toast.error('Verification successful! Please login manually.');
+            clearVerificationSession();
             setTimeout(() => {
               navigate('/login');
             }, 2000);
@@ -232,10 +235,7 @@ const EmailVerification = () => {
             console.warn('Failed to update user document:', error);
           }
           
-          // Clear session storage
-          sessionStorage.removeItem('pendingVerificationEmail');
-          sessionStorage.removeItem('pendingVerificationPassword');
-          sessionStorage.removeItem('pendingVerificationOtpSent');
+          clearVerificationSession();
           
           toast.success('Email verified! You can now login.');
           setTimeout(() => {

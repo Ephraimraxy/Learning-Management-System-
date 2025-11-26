@@ -1,67 +1,17 @@
-# LMS - Learning Management System (React + Firebase)
+## Environment Setup
 
-A modern Learning Management System built with React and Firebase, featuring the same scope and functionality as Frappe LMS.
-
-## Features
-
-- **Structured Learning**: Course → Chapter → Lesson hierarchy
-- **Batches**: Group learners into batches with live classes
-- **Quizzes**: Single-choice, multiple-choice, and open-ended questions
-- **Assignments**: Document submission and grading
-- **Certifications**: Certificate generation and management
-- **Programs**: Learning paths with multiple courses
-- **Live Classes**: Integration with video conferencing
-- **User Profiles**: Complete user management with roles
-- **Statistics**: Dashboard with analytics
-- **Notifications**: Real-time notifications
-
-## Tech Stack
-
-- **Frontend**: React 18 + Vite
-- **Backend**: Firebase (Auth, Firestore, Storage)
-- **Styling**: Tailwind CSS
-- **State Management**: Zustand
-- **Routing**: React Router v6
-- **Forms**: React Hook Form
-
-## Setup
-
-1. Install dependencies:
-```bash
-npm install
-```
-
-2. Configure Firebase:
-   - Create a Firebase project at https://console.firebase.google.com
-   - Copy your Firebase config to `src/config/firebase.js`
-
-3. Start development server:
-```bash
-npm run dev
-```
-
-## Firebase Setup
-
-1. Enable Authentication (Email/Password, Google)
-2. Create Firestore database
-3. Enable Storage for file uploads
-4. Set up Firestore security rules (see `firestore.rules`)
-
-## Project Structure
+Create a `.env` (or `.env.local`) alongside `package.json` with:
 
 ```
-src/
-├── components/     # Reusable components
-├── pages/         # Page components
-├── config/        # Firebase configuration
-├── hooks/         # Custom React hooks
-├── services/      # Firebase services
-├── stores/        # Zustand stores
-├── utils/         # Utility functions
-└── styles/        # Global styles
+VITE_USE_EMAIL_BACKEND=true
+VITE_API_URL=http://localhost:3001
+VITE_PENDING_SECRET=<generate-32-char-random-string>
 ```
 
-## License
+Restart `npm run dev` whenever you change these values. Rotate `VITE_PENDING_SECRET` periodically; for higher security, move the pending-password encryption to your backend and keep the secret entirely server-side.
 
-MIT
+## Email Service Health
+
+The signup screen now surfaces a banner if the email backend health check fails so users know to retry later. Keep the backend running (`npm start` inside `backend/`) or update `VITE_API_URL` to your deployed mailer.
+
 

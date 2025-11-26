@@ -5,6 +5,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../config/firebase';
 import { useAuthStore } from '../stores/authStore';
 import toast from 'react-hot-toast';
+import { COURSE_CATEGORIES, CATEGORY_MODULE_MAP } from '../constants/courseCategories';
 
 const CourseForm = () => {
   const { courseId } = useParams();
@@ -12,18 +13,21 @@ const CourseForm = () => {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     title: '',
     description: '',
     shortIntroduction: '',
     category: '',
+    module: '',
     image: '',
     published: false,
     paidCourse: false,
     coursePrice: '',
     currency: 'USD',
     enableCertification: false,
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
 
   useEffect(() => {
     if (courseId && courseId !== 'new') {
@@ -32,7 +36,7 @@ const CourseForm = () => {
           const docRef = doc(db, 'courses', courseId);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
-            setFormData({ ...docSnap.data() });
+            setFormData({ ...initialFormState, ...docSnap.data() });
           }
         } catch (error) {
           toast.error('Failed to load course');
@@ -59,6 +63,16 @@ const CourseForm = () => {
       setUploading(false);
     }
   };
+
+  const handleCategoryChange = (value) => {
+    setFormData({
+      ...formData,
+      category: value,
+      module: '',
+    });
+  };
+
+  const modulesForCategory = CATEGORY_MODULE_MAP[formData.category] || [];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -134,15 +148,42 @@ const CourseForm = () => {
               <label className="block text-sm font-medium mb-2">Category</label>
               <select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                onChange={(e) => handleCategoryChange(e.target.value)}
                 className="input"
               >
                 <option value="">Select Category</option>
-                <option value="programming">Programming</option>
-                <option value="design">Design</option>
-                <option value="business">Business</option>
-                <option value="marketing">Marketing</option>
+                {COURSE_CATEGORIES.map((cat) => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Module</label>
+              <select
+                value={formData.module}
+                onChange={(e) => setFormData({ ...formData, module: e.target.value })}
+                className="input"
+                disabled={!formData.category || modulesForCategory.length === 0}
+              >
+                <option value="">
+                  {formData.category ? 'Select Module' : 'Choose a category first'}
+                </option>
+                {modulesForCategory.map((module) => (
+                  <option key={module.id} value={module.id}>
+                    {module.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                {formData.module
+                  ? modulesForCategory.find((m) => m.id === formData.module)?.description
+                  : formData.category
+                  ? 'Select the module this course contributes to.'
+                  : 'Pick a category to unlock relevant modules.'}
+              </p>
             </div>
 
             <div>
@@ -200,6 +241,7 @@ const CourseForm = () => {
                     className="input"
                   >
                     <option value="USD">USD</option>
+                    <option value="INR">NGN</option>
                     <option value="EUR">EUR</option>
                     <option value="INR">INR</option>
                   </select>

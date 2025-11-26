@@ -1,20 +1,77 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { sendOTPEmail, generateOTP } from '../services/emailService';
 import toast from 'react-hot-toast';
 import { BookOpen } from 'lucide-react';
+import { encryptValue } from '../utils/encryption';
+import { shouldUseBackendEmail, getEmailApiBaseUrl } from '../utils/emailBackend';
 
 const Signup = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailServiceStatus, setEmailServiceStatus] = useState({
+    checking: true,
+    online: false,
+    message: '',
+  });
   const navigate = useNavigate();
+
+  const checkEmailService = useCallback(async () => {
+    if (!shouldUseBackendEmail()) {
+      setEmailServiceStatus({ checking: false, online: true, message: '' });
+      return;
+    }
+
+    const baseUrl = getEmailApiBaseUrl();
+    if (!baseUrl) {
+      setEmailServiceStatus({
+        checking: false,
+        online: false,
+        message: 'Email service is not configured. Please contact support.',
+      });
+      return;
+    }
+
+    setEmailServiceStatus((prev) => ({ ...prev, checking: true }));
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const response = await fetch(`${baseUrl}/api/health`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!response.ok) {
+        throw new Error('Unhealthy response');
+      }
+      setEmailServiceStatus({ checking: false, online: true, message: '' });
+    } catch (error) {
+      setEmailServiceStatus({
+        checking: false,
+        online: false,
+        message: 'Email verification service is temporarily unavailable. Please retry shortly.',
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    checkEmailService();
+  }, [checkEmailService]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (emailServiceStatus.checking) {
+      toast.error('Hold on a moment, we are validating the email service.');
+      return;
+    }
+
+    if (!emailServiceStatus.online) {
+      toast.error(emailServiceStatus.message || 'Email service unavailable. Please try again later.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -46,15 +103,17 @@ const Signup = () => {
         if (hoursSinceCreation < 24) {
           // Generate new OTP
           const otpCode = generateOTP();
+          const encryptedPassword = encryptValue(password);
           
           // Update pending signup with new data
           await setDoc(doc(db, 'pendingSignups', email), {
             name,
             email,
-            password, // Store encrypted or hashed in production
+            passwordEncrypted: encryptedPassword,
             otpCode,
             createdAt: new Date().toISOString(),
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+            verificationStatus: 'otpResent',
           }, { merge: true });
           
           // Send OTP email
@@ -69,7 +128,6 @@ const Signup = () => {
           // Store in sessionStorage for verification page
           sessionStorage.setItem('pendingVerificationEmail', email);
           sessionStorage.setItem('pendingVerificationPassword', password);
-          sessionStorage.setItem('pendingVerificationOtpSent', 'true');
           
           navigate('/verify-email', { replace: true });
           toast.success('New OTP code sent to your email!');
@@ -81,15 +139,17 @@ const Signup = () => {
       // Generate OTP code
       const otpCode = generateOTP();
 
+      const encryptedPassword = encryptValue(password);
+
       // Store signup data temporarily in Firestore (NOT creating Firebase Auth account yet)
-      // This will be used to create the account AFTER OTP verification
       await setDoc(doc(db, 'pendingSignups', email), {
         name,
         email,
-        password, // Store encrypted or hashed in production - for now storing plaintext temporarily
+        passwordEncrypted: encryptedPassword,
         otpCode,
         createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours expiry
+        verificationStatus: 'otpSent',
       });
 
       // Send OTP email
@@ -97,9 +157,7 @@ const Signup = () => {
       
       if (!emailResult.success) {
         // If email sending fails, delete the pending signup
-        await setDoc(doc(db, 'pendingSignups', email), {
-          deleted: true,
-        }, { merge: true });
+        await deleteDoc(doc(db, 'pendingSignups', email));
         toast.error('Failed to send verification email. Please try again.');
         setLoading(false);
         return;
@@ -108,7 +166,6 @@ const Signup = () => {
       // Store email and password in sessionStorage for verification page
       sessionStorage.setItem('pendingVerificationEmail', email);
       sessionStorage.setItem('pendingVerificationPassword', password);
-      sessionStorage.setItem('pendingVerificationOtpSent', 'true');
       
       // Redirect to OTP verification page
       navigate('/verify-email', { replace: true });
@@ -168,6 +225,19 @@ const Signup = () => {
             </Link>
           </p>
         </div>
+        {!emailServiceStatus.checking && !emailServiceStatus.online && (
+          <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <p className="font-semibold">Email verification service is offline.</p>
+            <p className="mt-1">{emailServiceStatus.message}</p>
+            <button
+              type="button"
+              onClick={checkEmailService}
+              className="mt-3 inline-flex items-center rounded-md border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+            >
+              Retry health check
+            </button>
+          </div>
+        )}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">
             <div>
@@ -221,7 +291,7 @@ const Signup = () => {
           <div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || emailServiceStatus.checking || !emailServiceStatus.online}
               className="btn btn-primary w-full"
             >
               {loading ? 'Creating account...' : 'Sign up'}

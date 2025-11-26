@@ -7,6 +7,7 @@ import { Calendar, Users, Video, MessageSquare, Megaphone, BarChart3 } from 'luc
 import AdminBatchDashboard from '../components/AdminBatchDashboard';
 import StudentBatchDashboard from '../components/StudentBatchDashboard';
 import { getUserBatchEnrollment, enrollInBatch } from '../services/batchService';
+import { getLiveClasses } from '../services/liveClassService';
 import toast from 'react-hot-toast';
 
 const BatchDetail = () => {
@@ -16,6 +17,8 @@ const BatchDetail = () => {
   const [enrolled, setEnrolled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [liveClasses, setLiveClasses] = useState([]);
+  const [liveClassesLoading, setLiveClassesLoading] = useState(true);
 
   useEffect(() => {
     const fetchBatch = async () => {
@@ -39,6 +42,22 @@ const BatchDetail = () => {
     };
     fetchBatch();
   }, [batchId, user]);
+
+  useEffect(() => {
+    const fetchClasses = async () => {
+      setLiveClassesLoading(true);
+      try {
+        const classes = await getLiveClasses(batchId);
+        setLiveClasses(classes);
+      } catch (error) {
+        console.error('Failed to load live classes', error);
+      } finally {
+        setLiveClassesLoading(false);
+      }
+    };
+
+    fetchClasses();
+  }, [batchId]);
 
   const handleEnroll = async () => {
     if (!user) {
@@ -88,7 +107,7 @@ const BatchDetail = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <Video className="h-5 w-5 text-gray-500" />
-                <span>{batch.liveClasses?.length || 0} Live Classes</span>
+                <span>{liveClasses.length} Live Classes</span>
               </div>
             </div>
           </div>
@@ -168,30 +187,70 @@ const BatchDetail = () => {
                 {isAdmin ? (
                   <AdminBatchDashboard batch={batch} />
                 ) : (
-                  <StudentBatchDashboard batch={batch} />
+                  <StudentBatchDashboard batch={batch} liveClasses={liveClasses} />
                 )}
               </>
             )}
 
             {activeTab === 'classes' && (
               <div className="space-y-4">
-                {batch.liveClasses && batch.liveClasses.length > 0 ? (
-                  batch.liveClasses.map((liveClass, idx) => (
-                    <div key={idx} className="border border-gray-200 rounded-lg p-4">
-                      <h3 className="font-semibold mb-2">{liveClass.title}</h3>
-                      <p className="text-gray-600 mb-2">{liveClass.description}</p>
-                      <div className="text-sm text-gray-500">
-                        <p>Date: {new Date(liveClass.date).toLocaleString()}</p>
-                        {liveClass.zoomLink && (
-                          <a
-                            href={liveClass.zoomLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary-600 hover:underline"
-                          >
-                            Join Zoom Meeting →
-                          </a>
-                        )}
+                {liveClassesLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+                  </div>
+                ) : liveClasses.length > 0 ? (
+                  liveClasses.map((liveClass) => (
+                    <div key={liveClass.id} className="border border-gray-200 rounded-lg p-4 space-y-2">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <h3 className="font-semibold mb-1">{liveClass.title}</h3>
+                          {liveClass.description && (
+                            <p className="text-gray-600 mb-2">{liveClass.description}</p>
+                          )}
+                          <div className="text-sm text-gray-500 space-y-1">
+                            <p>
+                              Scheduled:{' '}
+                              <span className="font-medium">
+                                {new Date(liveClass.date).toLocaleString()}
+                              </span>
+                            </p>
+                            {liveClass.duration && (
+                              <p>Duration: {liveClass.duration} mins</p>
+                            )}
+                            <p className="capitalize">Status: {liveClass.status || 'scheduled'}</p>
+                            {liveClass.recordingUrl && (
+                              <a
+                                href={liveClass.recordingUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-primary-600 hover:underline"
+                              >
+                                View recording →
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-4 md:mt-0 flex items-center space-x-3">
+                          {liveClass.meetingProvider === 'daily' ? (
+                            <Link
+                              to={`/live-classes/${liveClass.id}`}
+                              className="btn btn-primary btn-sm"
+                            >
+                              Enter Classroom
+                            </Link>
+                          ) : (
+                            liveClass.externalLink && (
+                              <a
+                                href={liveClass.externalLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-secondary btn-sm"
+                              >
+                                Join External Meeting
+                              </a>
+                            )
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))
@@ -224,10 +283,14 @@ const BatchDetail = () => {
       {!showDashboard && (
         <div className="card">
           <h2 className="text-2xl font-bold mb-4">Live Classes</h2>
-          {batch.liveClasses && batch.liveClasses.length > 0 ? (
+          {liveClassesLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+            </div>
+          ) : liveClasses.length > 0 ? (
             <div className="space-y-4">
-              {batch.liveClasses.map((liveClass, idx) => (
-                <div key={idx} className="border border-gray-200 rounded-lg p-4">
+              {liveClasses.map((liveClass) => (
+                <div key={liveClass.id} className="border border-gray-200 rounded-lg p-4">
                   <h3 className="font-semibold mb-2">{liveClass.title}</h3>
                   <p className="text-gray-600 mb-2">{liveClass.description}</p>
                   <div className="text-sm text-gray-500">

@@ -6,7 +6,7 @@ import { getAssignments } from '../services/assignmentService';
 import { getUserSubmission } from '../services/assignmentService';
 import { Calendar, BookOpen, FileText, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 
-const StudentBatchDashboard = ({ batch }) => {
+const StudentBatchDashboard = ({ batch, liveClasses = [] }) => {
   const { batchId } = useParams();
   const { user } = useAuthStore();
   const [progress, setProgress] = useState(null);
@@ -42,7 +42,7 @@ const StudentBatchDashboard = ({ batch }) => {
 
         // Get upcoming live classes
         const now = new Date();
-        const classes = (batch.liveClasses || []).filter(lc => new Date(lc.date) > now);
+        const classes = (liveClasses.length ? liveClasses : batch.liveClasses || []).filter(lc => new Date(lc.date) > now);
         setUpcomingClasses(classes.sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5));
       } catch (error) {
         console.error('Failed to load dashboard data');
@@ -148,15 +148,24 @@ const StudentBatchDashboard = ({ batch }) => {
                       )}
                     </div>
                   </div>
-                  {liveClass.zoomLink && (
-                    <a
-                      href={liveClass.zoomLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  {liveClass.meetingProvider === 'daily' ? (
+                    <Link
+                      to={`/live-classes/${liveClass.id}`}
                       className="btn btn-primary text-sm"
                     >
-                      Join
-                    </a>
+                      Enter Classroom
+                    </Link>
+                  ) : (
+                    liveClass.externalLink && (
+                      <a
+                        href={liveClass.externalLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-secondary text-sm"
+                      >
+                        Join
+                      </a>
+                    )
                   )}
                 </div>
               </div>

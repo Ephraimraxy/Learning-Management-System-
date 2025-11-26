@@ -30,6 +30,7 @@ const StudentDashboard = () => {
   const [myBatches, setMyBatches] = useState([]);
   const [upcomingClasses, setUpcomingClasses] = useState([]);
   const [recommendedCourses, setRecommendedCourses] = useState([]);
+  const [availableCourses, setAvailableCourses] = useState(0);
   const [stats, setStats] = useState({
     enrolledCourses: 0,
     completedCourses: 0,
@@ -42,6 +43,15 @@ const StudentDashboard = () => {
     const fetchDashboardData = async () => {
       try {
         if (!user) return;
+
+        // Get available published courses for global visibility
+        let publishedCourses = [];
+        try {
+          publishedCourses = await getCourses({ published: true });
+          setAvailableCourses(publishedCourses.length);
+        } catch (error) {
+          console.error('Failed to fetch available courses:', error);
+        }
 
         // Get enrolled courses
         const enrollments = await getUserEnrollments(user.uid);
@@ -108,17 +118,19 @@ const StudentDashboard = () => {
         setUpcomingClasses(upcoming);
 
         // Get recommended courses (using related courses service or fallback)
+        let recommended = [];
         try {
-          const recommended = await getRecommendedCourses(user.uid);
-          setRecommendedCourses(recommended.slice(0, 3));
+          recommended = await getRecommendedCourses(user.uid);
         } catch (error) {
-          // Fallback to simple recommendation
-          const allCourses = await getCourses({ published: true });
-          const recommended = allCourses
+          console.error('Failed to fetch recommended courses via service:', error);
+        }
+
+        if (!recommended.length && publishedCourses.length) {
+          recommended = publishedCourses
             .filter(c => !enrolledCourseIds.includes(c.id))
             .slice(0, 3);
-          setRecommendedCourses(recommended);
         }
+        setRecommendedCourses(recommended.slice(0, 3));
 
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
@@ -151,11 +163,23 @@ const StudentDashboard = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
         <div className="card">
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
             <div className="p-3 bg-primary-100 rounded-lg">
               <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-primary-600" />
+            </div>
+            <div>
+              <p className="text-xl md:text-2xl font-bold">{availableCourses}</p>
+              <p className="text-xs md:text-sm text-gray-600">Available Courses</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="card">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <PlayCircle className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
             </div>
             <div>
               <p className="text-xl md:text-2xl font-bold">{stats.enrolledCourses}</p>
@@ -282,15 +306,24 @@ const StudentDashboard = () => {
                       </div>
                     </div>
                   </div>
-                  {classItem.zoomLink && (
-                    <a
-                      href={classItem.zoomLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  {classItem.meetingProvider === 'daily' ? (
+                    <Link
+                      to={`/live-classes/${classItem.id}`}
                       className="btn btn-primary text-sm whitespace-nowrap"
                     >
-                      Join Class
-                    </a>
+                      Enter Classroom
+                    </Link>
+                  ) : (
+                    classItem.externalLink && (
+                      <a
+                        href={classItem.externalLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-secondary text-sm whitespace-nowrap"
+                      >
+                        Join External Call
+                      </a>
+                    )
                   )}
                 </div>
               </div>

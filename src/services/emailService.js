@@ -3,11 +3,9 @@
 
 // Note: For production, you MUST use a backend service (Node.js/Express/Firebase Functions) to send emails
 // Client-side JavaScript cannot directly send SMTP emails for security reasons
+import { shouldUseBackendEmail, getEmailApiBaseUrl } from '../utils/emailBackend';
 
-const shouldUseBackendEmail = () => {
-  const flag = import.meta.env.VITE_USE_EMAIL_BACKEND ?? process.env.REACT_APP_USE_EMAIL_BACKEND;
-  return String(flag).toLowerCase() === 'true';
-};
+import { shouldUseBackendEmail, getEmailApiBaseUrl } from '../utils/emailBackend';
 
 export const sendOTPEmail = async (email, otpCode) => {
   try {
@@ -26,57 +24,42 @@ export const sendOTPEmail = async (email, otpCode) => {
     // Store OTP in Firestore (temporary collection)
     await setDoc(doc(db, 'emailOTPs', email), otpData, { merge: true });
     
-    // Try to send via backend API if available
-    const API_URL = import.meta.env.VITE_API_URL || process.env.REACT_APP_API_URL;
+    const API_URL = getEmailApiBaseUrl();
     const useBackend = shouldUseBackendEmail() && Boolean(API_URL);
     
-    if (useBackend) {
-      try {
-        const response = await fetch(`${API_URL}/api/send-otp`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, otpCode }),
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          return { success: true, message: 'OTP code sent to your email!' };
-        } else {
-          // Backend returned an error, but don't fail the signup
-          const errorData = await response.json().catch(() => ({}));
-          if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
-            console.warn('Backend email service error:', errorData.error || 'Unknown error');
-          }
-        }
-      } catch (apiError) {
-        // Backend is not available or connection failed
-        // Silently handle this - OTP is stored in Firestore and can be verified
-        // Only log in development mode, and don't show as error
-        if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
-          // Use console.info instead of console.warn to reduce noise
-          console.info('Email backend not available. OTP stored in Firestore. Start backend server to send emails.');
-          console.info(`[DEV MODE] OTP Code for ${email}: ${otpCode}`);
-        }
-      }
-    } else {
-      // Backend email is not enabled
-      if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
-        console.info('Email backend not enabled. OTP stored in Firestore.');
-        console.info(`[DEV MODE] OTP Code for ${email}: ${otpCode}`);
-        console.info('To enable email sending, set VITE_USE_EMAIL_BACKEND=true and start the backend server.');
-      }
+    if (!useBackend) {
+      // Clean up OTP doc to avoid stale codes when email can't go out
+      const { deleteDoc, doc: docRef } = await import('firebase/firestore');
+      await deleteDoc(docRef(db, 'emailOTPs', email));
+      return { success: false, message: 'Email service is not configured. Please contact support.' };
     }
     
-    // Always return success since OTP is stored in Firestore
-    // The backend email is optional - OTP can still be verified from Firestore
-    return { 
-      success: true, 
-      message: 'OTP code sent to your email!',
-      devMode: import.meta.env.DEV || process.env.NODE_ENV === 'development',
-      otpCode: (import.meta.env.DEV || process.env.NODE_ENV === 'development') ? otpCode : undefined
-    };
+    try {
+      const response = await fetch(`${API_URL.replace(/\/$/, '')}/api/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, otpCode }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const message = errorData.error || 'Failed to send verification email.';
+        const { deleteDoc, doc: docRef } = await import('firebase/firestore');
+        await deleteDoc(docRef(db, 'emailOTPs', email));
+        return { success: false, message };
+      }
+      
+      return { success: true, message: 'OTP code sent to your email!' };
+    } catch (apiError) {
+      if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
+        console.error('Email backend request failed:', apiError);
+      }
+      const { deleteDoc, doc: docRef } = await import('firebase/firestore');
+      await deleteDoc(docRef(db, 'emailOTPs', email));
+      return { success: false, message: 'Unable to reach email service. Please try again later.' };
+    }
   } catch (error) {
     // Only log errors in development
     if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {

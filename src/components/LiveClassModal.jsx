@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createLiveClass, updateLiveClass } from '../services/liveClassService';
+import { createDailyRoom } from '../services/dailyService';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -10,9 +11,12 @@ const LiveClassModal = ({ isOpen, onClose, batchId, classData = null, onSuccess 
     date: '',
     time: '',
     duration: 60,
-    zoomLink: '',
+    externalLink: '',
     meetingId: '',
     password: '',
+    meetingProvider: 'daily',
+    recordingEnabled: true,
+    dailyRoomName: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -26,9 +30,12 @@ const LiveClassModal = ({ isOpen, onClose, batchId, classData = null, onSuccess 
         date: classDate,
         time: classTime,
         duration: classData.duration || 60,
-        zoomLink: classData.zoomLink || '',
+        externalLink: classData.zoomLink || classData.externalLink || '',
         meetingId: classData.meetingId || '',
         password: classData.password || '',
+        meetingProvider: classData.meetingProvider || 'daily',
+        recordingEnabled: typeof classData.recordingEnabled === 'boolean' ? classData.recordingEnabled : true,
+        dailyRoomName: classData.dailyRoomName || '',
       });
     }
   }, [classData]);
@@ -39,16 +46,53 @@ const LiveClassModal = ({ isOpen, onClose, batchId, classData = null, onSuccess 
 
     try {
       const dateTime = new Date(`${formData.date}T${formData.time}`);
-      const classDataToSave = {
+      const classDate = new Date(`${formData.date}T${formData.time}`);
+      const basePayload = {
         batchId,
         title: formData.title,
         description: formData.description,
-        date: dateTime.toISOString(),
+        date: classDate.toISOString(),
         time: formData.time,
         duration: formData.duration,
-        zoomLink: formData.zoomLink,
-        meetingId: formData.meetingId,
-        password: formData.password,
+        meetingProvider: formData.meetingProvider,
+        recordingEnabled: formData.recordingEnabled,
+        status: classData?.status || 'scheduled',
+      };
+
+      let meetingMetadata = {};
+      if (formData.meetingProvider === 'daily') {
+        const desiredName = formData.dailyRoomName || classData?.dailyRoomName || `${batchId}-${Date.now()}`;
+        if (!classData?.dailyRoomName) {
+          const roomResponse = await createDailyRoom({
+            name: desiredName,
+            properties: {
+              start_audio_off: false,
+              start_video_off: false,
+              enable_screenshare: true,
+            },
+          });
+          meetingMetadata = {
+            dailyRoomName: roomResponse?.name || desiredName,
+            dailyRoomUrl: roomResponse?.url || '',
+          };
+        } else {
+          meetingMetadata = {
+            dailyRoomName: classData.dailyRoomName,
+            dailyRoomUrl: classData.dailyRoomUrl || '',
+          };
+        }
+      } else {
+        meetingMetadata = {
+          externalLink: formData.externalLink,
+          zoomLink: formData.externalLink,
+          meetingId: formData.meetingId,
+          password: formData.password,
+        };
+      }
+
+      const classDataToSave = {
+        ...basePayload,
+        ...meetingMetadata,
       };
 
       if (classData?.id) {
@@ -139,35 +183,90 @@ const LiveClassModal = ({ isOpen, onClose, batchId, classData = null, onSuccess 
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Zoom Meeting Link</label>
-            <input
-              type="url"
-              value={formData.zoomLink}
-              onChange={(e) => setFormData({ ...formData, zoomLink: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg"
-              placeholder="https://zoom.us/j/..."
-            />
+            <label className="block text-sm font-medium mb-1">Meeting Provider</label>
+            <div className="flex items-center space-x-4">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  name="meetingProvider"
+                  value="daily"
+                  checked={formData.meetingProvider === 'daily'}
+                  onChange={(e) => setFormData({ ...formData, meetingProvider: e.target.value })}
+                />
+                <span>In-app (Daily)</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  name="meetingProvider"
+                  value="external"
+                  checked={formData.meetingProvider === 'external'}
+                  onChange={(e) => setFormData({ ...formData, meetingProvider: e.target.value })}
+                />
+                <span>External Link</span>
+              </label>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {formData.meetingProvider === 'daily' ? (
             <div>
-              <label className="block text-sm font-medium mb-1">Meeting ID</label>
+              <label className="block text-sm font-medium mb-1">Custom Room Name (optional)</label>
               <input
                 type="text"
-                value={formData.meetingId}
-                onChange={(e) => setFormData({ ...formData, meetingId: e.target.value })}
+                value={formData.dailyRoomName}
+                onChange={(e) => setFormData({ ...formData, dailyRoomName: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg"
+                placeholder="batch-name-week-3"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Leave empty to auto-generate the Daily room name.
+              </p>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Password</label>
-              <input
-                type="text"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg"
-              />
-            </div>
+          ) : (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-1">External Meeting Link</label>
+                <input
+                  type="url"
+                  value={formData.externalLink}
+                  onChange={(e) => setFormData({ ...formData, externalLink: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="https://zoom.us/j/..."
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Meeting ID</label>
+                  <input
+                    type="text"
+                    value={formData.meetingId}
+                    onChange={(e) => setFormData({ ...formData, meetingId: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Password</label>
+                  <input
+                    type="text"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="flex items-center space-x-2">
+            <input
+              id="enable-recording"
+              type="checkbox"
+              checked={formData.recordingEnabled}
+              onChange={(e) => setFormData({ ...formData, recordingEnabled: e.target.checked })}
+            />
+            <label htmlFor="enable-recording" className="text-sm font-medium">
+              Enable recording workflow for this session
+            </label>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
@@ -193,5 +292,8 @@ const LiveClassModal = ({ isOpen, onClose, batchId, classData = null, onSuccess 
 };
 
 export default LiveClassModal;
+
+
+
 
 

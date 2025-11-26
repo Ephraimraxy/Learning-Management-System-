@@ -44,13 +44,14 @@ const AdminDashboard = () => {
       try {
         // Get all courses created by admin/instructor
         const allCourses = await getCourses();
+        const publishedCourses = allCourses.filter(c => c.published);
         const createdCourses = allCourses.filter(c => c.instructorId === user?.uid);
         setMyCourses(createdCourses.slice(0, 6));
 
         // Get all statistics
         const statistics = await getAllStatistics();
         setStats({
-          totalCourses: createdCourses.length,
+          totalCourses: publishedCourses.length,
           totalStudents: statistics.totalStudents,
           totalEnrollments: statistics.totalEnrollments,
           totalCertificates: statistics.totalCertificates,
@@ -256,7 +257,7 @@ const AdminDashboard = () => {
             </div>
             <div>
               <p className="text-xl sm:text-2xl md:text-3xl font-bold">{stats.totalCourses}</p>
-              <p className="text-xs sm:text-sm text-gray-600">Total Courses</p>
+              <p className="text-xs sm:text-sm text-gray-600">Available Courses</p>
             </div>
           </div>
         </div>

@@ -1,4 +1,12 @@
 {
+  "functions": {
+    "source": "functions",
+    "ignore": [
+      "node_modules",
+      ".gitignore",
+      "firebase-debug.log"
+    ]
+  },
   "hosting": {
     "public": "dist",
     "ignore": [
