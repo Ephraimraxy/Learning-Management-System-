@@ -23,7 +23,6 @@ const EmailVerification = () => {
   const [resending, setResending] = useState(false);
   const [verified, setVerified] = useState(false);
   const [pendingSignupData, setPendingSignupData] = useState(null);
-  const otpSentRef = useRef(false);
   const clearVerificationSession = () => {
     sessionStorage.removeItem('pendingVerificationEmail');
     sessionStorage.removeItem('pendingVerificationPassword');
@@ -86,16 +85,6 @@ const EmailVerification = () => {
       }
     }
   };
-
-  // Send OTP only once when component mounts with email
-  useEffect(() => {
-    if (!email || verified || otpSentRef.current) {
-      return;
-    }
-    sendNewOTP(false);
-    otpSentRef.current = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email, verified]);
 
   // Clean up session storage on unmount if verification not completed
   useEffect(() => {
