@@ -7,7 +7,7 @@ import { getUnreadNotifications } from '../services/notificationService';
 const Layout = () => {
   const { user, userData, logout } = useAuthStore();
   const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
 
   const handleLogout = async () => {
     await logout();
@@ -21,7 +21,7 @@ const Layout = () => {
       setUnreadCount(0);
       return;
     }
-    
+
     const loadUnreadCount = async () => {
       try {
         const notifications = await getUnreadNotifications(user.uid);
@@ -32,7 +32,7 @@ const Layout = () => {
         setUnreadCount(0);
       }
     };
-    
+
     loadUnreadCount();
     const interval = setInterval(loadUnreadCount, 30000); // Check every 30 seconds
     return () => clearInterval(interval);
@@ -54,7 +54,7 @@ const Layout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -122,43 +122,12 @@ const Layout = () => {
                 </Link>
               )}
 
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 text-gray-700"
-              >
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
+
             </div>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200">
-            <nav className="px-4 py-2 space-y-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-primary-600"
-                >
-                  {item.label}
-                </Link>
-              ))}
-              {user && (
-                <Link
-                  to={`/profile/${user.uid}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
-                >
-                  Profile
-                </Link>
-              )}
-            </nav>
-          </div>
-        )}
+
       </header>
 
       {/* Main Content */}
@@ -174,6 +143,31 @@ const Layout = () => {
           </p>
         </div>
       </footer>
+
+      {/* Mobile Navigation - Horizontal Scroll */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 overflow-x-auto bg-white scrollbar-hide shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+        <nav className="flex px-4 py-2 space-x-6 min-w-max justify-around w-full">
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className="flex flex-col items-center justify-center px-1 py-1 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-primary-600 whitespace-nowrap"
+            >
+              <item.icon className="h-5 w-5 mb-1" />
+              {item.label}
+            </Link>
+          ))}
+          {user && (
+            <Link
+              to={`/profile/${user.uid}`}
+              className="flex flex-col items-center justify-center px-1 py-1 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-primary-600 whitespace-nowrap"
+            >
+              <Users className="h-5 w-5 mb-1" />
+              Profile
+            </Link>
+          )}
+        </nav>
+      </div>
     </div>
   );
 };
