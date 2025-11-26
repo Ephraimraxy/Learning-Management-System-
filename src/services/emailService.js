@@ -5,8 +5,6 @@
 // Client-side JavaScript cannot directly send SMTP emails for security reasons
 import { shouldUseBackendEmail, getEmailApiBaseUrl } from '../utils/emailBackend';
 
-import { shouldUseBackendEmail, getEmailApiBaseUrl } from '../utils/emailBackend';
-
 export const sendOTPEmail = async (email, otpCode) => {
   try {
     // Store OTP in Firestore for validation
