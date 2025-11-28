@@ -49,15 +49,12 @@ const Layout = () => {
     { path: '/jobs', label: 'Jobs', icon: Briefcase },
   ];
 
+  const [isFieldMode, setIsFieldMode] = useState(false);
+
   if (userData?.role === 'instructor' || userData?.role === 'admin') {
     navItems.push({ path: '/statistics', label: 'Statistics', icon: BarChart3 });
     navItems.push({ path: '/settings', label: 'Settings', icon: Settings });
   }
-
-  return (
-  const [isFieldMode, setIsFieldMode] = useState(false);
-
-  // ... (existing code)
 
   return (
     <div className={`min-h-screen ${isFieldMode ? 'bg-black text-yellow-400' : 'bg-gray-50'} pb-20 md:pb-0 transition-colors duration-300`}>
@@ -74,8 +71,8 @@ const Layout = () => {
             <button
               onClick={() => setIsFieldMode(!isFieldMode)}
               className={`ml-4 px-3 py-1.5 rounded-full text-xs font-bold flex items-center space-x-1 transition-all ${isFieldMode
-                  ? 'bg-yellow-400 text-black hover:bg-yellow-300'
-                  : 'bg-green-100 text-green-800 hover:bg-green-200'
+                ? 'bg-yellow-400 text-black hover:bg-yellow-300'
+                : 'bg-green-100 text-green-800 hover:bg-green-200'
                 }`}
             >
               {isFieldMode ? (
@@ -98,8 +95,8 @@ const Layout = () => {
                   key={item.path}
                   to={item.path}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${isFieldMode
-                      ? 'text-yellow-100 hover:bg-gray-800 hover:text-yellow-400'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-primary-600'
+                    ? 'text-yellow-100 hover:bg-gray-800 hover:text-yellow-400'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-primary-600'
                     }`}
                 >
                   {item.label}
@@ -179,8 +176,8 @@ const Layout = () => {
               key={item.path}
               to={item.path}
               className={`flex flex-col items-center justify-center px-1 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${isFieldMode
-                  ? 'text-yellow-100 hover:bg-gray-800 hover:text-yellow-400'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600'
+                ? 'text-yellow-100 hover:bg-gray-800 hover:text-yellow-400'
+                : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600'
                 }`}
             >
               <item.icon className="h-5 w-5 mb-1" />
@@ -191,8 +188,8 @@ const Layout = () => {
             <Link
               to={`/profile/${user.uid}`}
               className={`flex flex-col items-center justify-center px-1 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${isFieldMode
-                  ? 'text-yellow-100 hover:bg-gray-800 hover:text-yellow-400'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600'
+                ? 'text-yellow-100 hover:bg-gray-800 hover:text-yellow-400'
+                : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600'
                 }`}
             >
               <Users className="h-5 w-5 mb-1" />
