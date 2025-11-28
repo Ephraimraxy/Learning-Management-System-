@@ -30,6 +30,45 @@ const ChatWidget = () => {
         scrollToBottom();
     }, [messages, isOpen, isTyping]);
 
+    const toggleVoiceInput = () => {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert("Voice input is not supported in this browser. Please use Chrome or Edge.");
+            return;
+        }
+
+        if (isListening) {
+            setIsListening(false);
+            return;
+        }
+
+        setIsListening(true);
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            setMessage(transcript);
+            setIsListening(false);
+            // Optional: Auto-send after voice input
+            // handleSendMessage({ preventDefault: () => {} }); 
+        };
+
+        recognition.onerror = (event) => {
+            console.error("Speech recognition error", event.error);
+            setIsListening(false);
+        };
+
+        recognition.onend = () => {
+            setIsListening(false);
+        };
+
+        recognition.start();
+    };
+
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!message.trim()) return;
@@ -168,11 +207,11 @@ const ChatWidget = () => {
                                     <button
                                         type="button"
                                         className={`p-2.5 rounded-full transition-all duration-200 ${isListening
-                                            ? 'bg-red-50 text-red-500 ring-2 ring-red-100'
+                                            ? 'bg-red-50 text-red-500 ring-2 ring-red-100 animate-pulse'
                                             : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'
                                             }`}
-                                        onClick={() => setIsListening(!isListening)}
-                                        title="Voice Input (Coming Soon)"
+                                        onClick={toggleVoiceInput}
+                                        title={isListening ? "Stop Listening" : "Start Voice Input"}
                                     >
                                         {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
                                     </button>
@@ -180,8 +219,9 @@ const ChatWidget = () => {
                                         type="text"
                                         value={message}
                                         onChange={(e) => setMessage(e.target.value)}
-                                        placeholder="Ask ISAC anything..."
-                                        className="flex-1 border-0 bg-gray-50 rounded-full px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-100 focus:bg-white transition-all placeholder-gray-400"
+                                        placeholder={isListening ? "Listening..." : "Ask ISAC anything..."}
+                                        className={`flex-1 border-0 bg-gray-50 rounded-full px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-100 focus:bg-white transition-all placeholder-gray-400 ${isListening ? 'placeholder-primary-500' : ''
+                                            }`}
                                     />
                                     <button
                                         type="submit"
@@ -216,7 +256,7 @@ const ChatWidget = () => {
                     Chat with ISAC
                 </span>
             </button>
-        </div>
+        </div >
     );
 };
 
