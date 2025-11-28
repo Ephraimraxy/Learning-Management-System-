@@ -116,3 +116,43 @@ exports.createDailyMeetingToken = functions.https.onRequest((req, res) =>
   }),
 );
 
+/**
+ * ISAC AI Chatbot Function (Placeholder)
+ * 
+ * To enable this:
+ * 1. Install OpenAI: npm install openai
+ * 2. Set API Key: firebase functions:config:set openai.api_key="YOUR_KEY"
+ */
+/*
+const OpenAI = require('openai');
+
+exports.chatWithISAC = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be logged in.');
+  }
+
+  const openai = new OpenAI({
+    apiKey: functions.config().openai.api_key,
+  });
+
+  const { message, history } = data;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { role: "system", content: "You are ISAC, a helpful LMS assistant." },
+        ...history,
+        { role: "user", content: message }
+      ],
+      model: "gpt-4-turbo",
+    });
+
+    return {
+      text: completion.choices[0].message.content,
+    };
+  } catch (error) {
+    console.error('OpenAI Error:', error);
+    throw new functions.https.HttpsError('internal', 'AI is currently offline.');
+  }
+});
+*/

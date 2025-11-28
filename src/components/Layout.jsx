@@ -3,6 +3,7 @@ import { useAuthStore } from '../stores/authStore';
 import { LogOut, BookOpen, Users, FileText, Award, BarChart3, Menu, X, Briefcase, Settings, Bell, MessageSquare, Megaphone } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getUnreadNotifications } from '../services/notificationService';
+import ChatWidget from './ChatWidget';
 
 const Layout = () => {
   const { user, userData, logout } = useAuthStore();
@@ -168,6 +169,9 @@ const Layout = () => {
           )}
         </nav>
       </div>
+
+      {/* ISAC Chat Widget */}
+      <ChatWidget />
     </div>
   );
 };
