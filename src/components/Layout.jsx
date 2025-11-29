@@ -1,6 +1,6 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { LogOut, BookOpen, Users, FileText, Award, BarChart3, Menu, X, Briefcase, Settings, Bell, MessageSquare, Megaphone } from 'lucide-react';
+import { LogOut, BookOpen, Users, FileText, Award, BarChart3, Menu, X, Briefcase, Settings, Bell, MessageSquare, Megaphone, Home, GraduationCap, ClipboardList, CheckSquare } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getUnreadNotifications } from '../services/notificationService';
 import ChatWidget from './ChatWidget';
@@ -40,11 +40,11 @@ const Layout = () => {
   }, [user]);
 
   const navItems = [
-    { path: '/', label: 'Home', icon: BookOpen },
-    { path: '/courses', label: 'Courses', icon: BookOpen },
+    { path: '/', label: 'Home', icon: Home },
+    { path: '/courses', label: 'Courses', icon: GraduationCap },
     { path: '/batches', label: 'Batches', icon: Users },
-    { path: '/quizzes', label: 'Quizzes', icon: FileText },
-    { path: '/assignments', label: 'Assignments', icon: FileText },
+    { path: '/quizzes', label: 'Quizzes', icon: ClipboardList },
+    { path: '/assignments', label: 'Assignments', icon: CheckSquare },
     { path: '/programs', label: 'Programs', icon: Award },
     { path: '/jobs', label: 'Jobs', icon: Briefcase },
   ];
@@ -168,32 +168,32 @@ const Layout = () => {
       </footer>
 
       {/* Mobile Navigation - Horizontal Scroll */}
-      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t overflow-x-auto scrollbar-hide shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-colors duration-300 ${isFieldMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-50 overflow-x-auto scrollbar-hide shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-all duration-300 ${isFieldMode ? 'bg-transparent backdrop-blur-sm' : 'bg-transparent backdrop-blur-sm'
         }`}>
-        <nav className="flex px-4 py-2 space-x-6 min-w-max justify-around w-full">
+        <nav className="flex px-3 py-3 space-x-2 min-w-max justify-start w-full">
           {navItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center justify-center px-1 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${isFieldMode
-                ? 'text-yellow-100 hover:bg-gray-800 hover:text-yellow-400'
-                : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600'
+              className={`group flex flex-col items-center justify-center px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95 ${isFieldMode
+                ? 'bg-gray-900/90 text-yellow-100 hover:bg-yellow-400 hover:text-black border border-yellow-400/30'
+                : 'bg-white/90 text-gray-700 hover:bg-primary-600 hover:text-white shadow-sm border border-gray-200'
                 }`}
             >
-              <item.icon className="h-5 w-5 mb-1" />
-              {item.label}
+              <item.icon className="h-5 w-5 mb-1 transition-transform duration-200 group-hover:scale-110" />
+              <span className="text-[10px]">{item.label}</span>
             </Link>
           ))}
           {user && (
             <Link
               to={`/profile/${user.uid}`}
-              className={`flex flex-col items-center justify-center px-1 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${isFieldMode
-                ? 'text-yellow-100 hover:bg-gray-800 hover:text-yellow-400'
-                : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600'
+              className={`group flex flex-col items-center justify-center px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95 ${isFieldMode
+                ? 'bg-gray-900/90 text-yellow-100 hover:bg-yellow-400 hover:text-black border border-yellow-400/30'
+                : 'bg-white/90 text-gray-700 hover:bg-primary-600 hover:text-white shadow-sm border border-gray-200'
                 }`}
             >
-              <Users className="h-5 w-5 mb-1" />
-              Profile
+              <Users className="h-5 w-5 mb-1 transition-transform duration-200 group-hover:scale-110" />
+              <span className="text-[10px]">Profile</span>
             </Link>
           )}
         </nav>
