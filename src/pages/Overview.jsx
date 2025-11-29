@@ -1,4 +1,4 @@
-import { Star, Clock, BookOpen, TrendingUp, Award, Zap } from 'lucide-react';
+import { Star, Clock, BookOpen, TrendingUp, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const CourseCard = ({ course }) => {
@@ -6,9 +6,13 @@ const CourseCard = ({ course }) => {
         <Link to={`/courses/${course.id}`} className="group">
             <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 h-full flex flex-col">
                 {/* Thumbnail */}
-                <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-green-100">
-                    <div className="aspect-video flex items-center justify-center p-6">
-                        <span className="text-6xl">{course.emoji}</span>
+                <div className="relative overflow-hidden">
+                    <div className="aspect-video">
+                        <img
+                            src={course.image}
+                            alt={course.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
                     </div>
                     {/* Badge */}
                     {course.badge && (
@@ -96,7 +100,7 @@ const Overview = () => {
             price: 9900,
             originalPrice: 14900,
             badge: 'Bestseller',
-            emoji: '🌾',
+            image: '/images/courses/rice-farming.png',
             category: 'Crop Production'
         },
         {
@@ -110,7 +114,7 @@ const Overview = () => {
             price: 8900,
             originalPrice: 12900,
             badge: 'New',
-            emoji: '🌱',
+            image: '/images/courses/soybean-farming.png',
             category: 'Crop Production'
         },
         {
@@ -124,7 +128,7 @@ const Overview = () => {
             price: 11900,
             originalPrice: 16900,
             badge: 'Bestseller',
-            emoji: '🚜',
+            image: '/images/courses/rice-farming.png',
             category: 'Crop Production'
         },
         {
@@ -137,7 +141,7 @@ const Overview = () => {
             lectures: 42,
             price: 9900,
             originalPrice: 13900,
-            emoji: '📦',
+            image: '/images/courses/soybean-farming.png',
             category: 'Crop Production'
         },
         {
@@ -151,7 +155,7 @@ const Overview = () => {
             price: 12900,
             originalPrice: 17900,
             badge: 'Premium',
-            emoji: '🥬',
+            image: '/images/courses/greenhouse.png',
             category: 'Crop Production'
         },
         {
@@ -164,7 +168,7 @@ const Overview = () => {
             lectures: 38,
             price: 7900,
             originalPrice: 10900,
-            emoji: '🫘',
+            image: '/images/courses/soybean-farming.png',
             category: 'Crop Production'
         },
 
@@ -180,7 +184,7 @@ const Overview = () => {
             price: 10900,
             originalPrice: 15900,
             badge: 'Bestseller',
-            emoji: '🐟',
+            image: '/images/courses/catfish.png',
             category: 'Aquaculture'
         },
         {
@@ -194,7 +198,7 @@ const Overview = () => {
             price: 9900,
             originalPrice: 14900,
             badge: 'Bestseller',
-            emoji: '🐓',
+            image: '/images/courses/poultry.png',
             category: 'Livestock'
         },
         {
@@ -207,7 +211,7 @@ const Overview = () => {
             lectures: 46,
             price: 8900,
             originalPrice: 12900,
-            emoji: '🐄',
+            image: '/images/courses/cattle.png',
             category: 'Livestock'
         },
 
@@ -223,7 +227,7 @@ const Overview = () => {
             price: 13900,
             originalPrice: 19900,
             badge: 'Premium',
-            emoji: '💼',
+            image: '/images/courses/rice-farming.png',
             category: 'Business'
         },
         {
@@ -237,7 +241,7 @@ const Overview = () => {
             price: 11900,
             originalPrice: 16900,
             badge: 'New',
-            emoji: '💻',
+            image: '/images/courses/machinery.png',
             category: 'Business'
         },
         {
@@ -250,7 +254,7 @@ const Overview = () => {
             lectures: 44,
             price: 9900,
             originalPrice: 13900,
-            emoji: '💰',
+            image: '/images/courses/soybean-farming.png',
             category: 'Finance'
         },
         {
@@ -264,7 +268,7 @@ const Overview = () => {
             price: 6900,
             originalPrice: 9900,
             badge: 'Bestseller',
-            emoji: '🌍',
+            image: '/images/courses/rice-farming.png',
             category: 'Business'
         },
         {
@@ -277,7 +281,7 @@ const Overview = () => {
             lectures: 52,
             price: 10900,
             originalPrice: 14900,
-            emoji: '📊',
+            image: '/images/courses/greenhouse.png',
             category: 'Marketing'
         },
 
@@ -293,7 +297,7 @@ const Overview = () => {
             price: 11900,
             originalPrice: 16900,
             badge: 'Premium',
-            emoji: '🚜',
+            image: '/images/courses/machinery.png',
             category: 'Technology'
         },
         {
@@ -307,7 +311,7 @@ const Overview = () => {
             price: 15900,
             originalPrice: 22900,
             badge: 'Bestseller',
-            emoji: '🌾',
+            image: '/images/courses/rice-farming.png',
             category: 'Practical'
         },
         {
@@ -320,7 +324,7 @@ const Overview = () => {
             lectures: 16,
             price: 4900,
             originalPrice: 6900,
-            emoji: '🎤',
+            image: '/images/courses/greenhouse.png',
             category: 'Events'
         },
         {
@@ -334,7 +338,7 @@ const Overview = () => {
             price: 25900,
             originalPrice: 35900,
             badge: 'Premium',
-            emoji: '🎓',
+            image: '/images/courses/rice-farming.png',
             category: 'Certification'
         },
 
@@ -349,7 +353,7 @@ const Overview = () => {
             lectures: 48,
             price: 9900,
             originalPrice: 14900,
-            emoji: '🧑‍💼',
+            image: '/images/courses/rice-farming.png',
             category: 'Leadership'
         },
         {
@@ -363,7 +367,7 @@ const Overview = () => {
             price: 2900,
             originalPrice: 4900,
             badge: 'New',
-            emoji: '⚡',
+            image: '/images/courses/greenhouse.png',
             category: 'Motivation'
         },
     ];
