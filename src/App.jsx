@@ -74,17 +74,17 @@ function App() {
       }}
     >
       <Routes>
-        <Route path="/login" element={!shouldRedirectToDashboard ? <Login /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
-        <Route path="/signup" element={!shouldRedirectToDashboard ? <Signup /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
+        <Route path="/login" element={!shouldRedirectToDashboard ? <Login /> : <Navigate to="/overview" />} />
+        <Route path="/signup" element={!shouldRedirectToDashboard ? <Signup /> : <Navigate to="/overview" />} />
         <Route path="/verify-email" element={<EmailVerification />} />
-        <Route path="/get-started" element={!shouldRedirectToDashboard ? <GetStarted /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
+        <Route path="/get-started" element={!shouldRedirectToDashboard ? <GetStarted /> : <Navigate to="/overview" />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-reset-code" element={<VerifyResetCode />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
 
         {/* Home page without layout for unauthenticated users */}
-        <Route path="/" element={!shouldRedirectToDashboard ? <Home /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} replace />} />
+        <Route path="/" element={!shouldRedirectToDashboard ? <Home /> : <Navigate to="/overview" replace />} />
 
         <Route element={<Layout />}>
           <Route path="/overview" element={<ProtectedRoute><Overview /></ProtectedRoute>} />

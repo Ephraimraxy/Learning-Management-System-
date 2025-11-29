@@ -79,14 +79,9 @@ const Login = () => {
       setUser(user);
       toast.success('Logged in successfully!');
 
-      // Redirect based on role (admins determined by Firestore role)
-      if (isAdmin) {
-        hideLoading(); // Added hideLoading
-        navigate('/admin/dashboard');
-      } else {
-        hideLoading(); // Added hideLoading
-        navigate('/student/dashboard');
-      }
+      // Redirect to overview page
+      hideLoading();
+      navigate('/overview');
     } catch (error) {
       let errorMessage = 'An error occurred. Please try again.';
 
