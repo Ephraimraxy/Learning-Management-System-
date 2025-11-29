@@ -41,6 +41,7 @@ import CertificateRequests from './pages/CertificateRequests';
 import EmailVerification from './pages/EmailVerification';
 import LiveClassroom from './pages/LiveClassroom';
 import ProtectedRoute from './components/ProtectedRoute';
+import GetStarted from './pages/GetStarted';
 
 function App() {
   const { user, userData, loading, initializeAuth } = useAuthStore();
@@ -67,13 +68,18 @@ function App() {
       }}
     >
       <Routes>
+
+        // ... (existing imports)
+
+        // ... (inside Routes)
         <Route path="/login" element={!shouldRedirectToDashboard ? <Login /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
         <Route path="/signup" element={!shouldRedirectToDashboard ? <Signup /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
         <Route path="/verify-email" element={<EmailVerification />} />
-        
+        <Route path="/get-started" element={!shouldRedirectToDashboard ? <GetStarted /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
+
         {/* Home page without layout for unauthenticated users */}
         <Route path="/" element={!shouldRedirectToDashboard ? <Home /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} replace />} />
-        
+
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

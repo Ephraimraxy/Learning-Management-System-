@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { BookOpen, LogIn, UserPlus } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 
 const Home = () => {
   const { user, userData } = useAuthStore();
+  const [isGreen, setIsGreen] = useState(false);
 
   // Redirect logged-in users to their dashboard
   useEffect(() => {
@@ -18,6 +19,14 @@ const Home = () => {
     }
   }, [user, userData]);
 
+  // Background Animation Interval
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsGreen((prev) => !prev);
+    }, 2000); // Toggle every 2 seconds for a smoother transition
+    return () => clearInterval(interval);
+  }, []);
+
   if (user && userData) {
     const isAdmin = userData.role === 'admin' || userData.role === 'instructor';
     if (isAdmin) {
@@ -28,94 +37,44 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl w-full">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex justify-center mb-6">
-            <div className="p-4 bg-primary-600 rounded-full">
-              <BookOpen className="h-12 w-12 text-white" />
-            </div>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+    <div
+      className={`min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-1000 ease-in-out ${isGreen ? 'bg-green-100/80' : 'bg-white'
+        }`}
+    >
+      <div className="max-w-4xl w-full text-center space-y-12">
+
+        {/* Icon */}
+        <div className="flex justify-center">
+          <BookOpen className="h-20 w-20 text-green-600" strokeWidth={1.5} />
+        </div>
+
+        {/* Text Content */}
+        <div className="space-y-4">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 tracking-tight">
             Welcome to LMS
           </h1>
-          <p className="text-xl text-gray-600">
-            Learning Management System - Your gateway to structured learning
+          <p className="text-xl md:text-2xl text-green-700 font-medium">
+            Your journey to agribusiness knowledge starts here
           </p>
         </div>
 
-        {/* Login/Signup Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Student Login */}
-          <div className="card hover:shadow-xl transition-shadow">
-            <div className="text-center">
-              <div className="flex justify-center mb-4">
-                <div className="p-3 bg-primary-100 rounded-full">
-                  <LogIn className="h-8 w-8 text-primary-600" />
-                </div>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Student Login</h2>
-              <p className="text-gray-600 mb-6">
-                Sign in to access your courses, track progress, and earn certificates
-              </p>
-              <Link
-                to="/login"
-                className="btn btn-primary w-full flex items-center justify-center space-x-2"
-              >
-                <LogIn className="h-5 w-5" />
-                <span>Sign In</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Student Signup */}
-          <div className="card hover:shadow-xl transition-shadow">
-            <div className="text-center">
-              <div className="flex justify-center mb-4">
-                <div className="p-3 bg-green-100 rounded-full">
-                  <UserPlus className="h-8 w-8 text-green-600" />
-                </div>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">New Student</h2>
-              <p className="text-gray-600 mb-6">
-                Create an account to start learning. Email verification required.
-              </p>
-              <Link
-                to="/signup"
-                className="btn bg-green-600 text-white hover:bg-green-700 w-full flex items-center justify-center space-x-2"
-              >
-                <UserPlus className="h-5 w-5" />
-                <span>Sign Up</span>
-              </Link>
-            </div>
-          </div>
+        {/* Get Started Button */}
+        <div>
+          <Link
+            to="/get-started"
+            className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-full text-white bg-green-600 hover:bg-green-700 md:text-xl md:px-10 transition-transform hover:scale-105 shadow-lg"
+          >
+            Get Started
+          </Link>
         </div>
 
-        {/* Features */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="p-3 bg-primary-100 rounded-lg inline-block mb-3">
-              <BookOpen className="h-6 w-6 text-primary-600" />
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-2">Interactive Courses</h3>
-            <p className="text-sm text-gray-600">Learn at your own pace with structured content</p>
-          </div>
-          <div className="text-center">
-            <div className="p-3 bg-green-100 rounded-lg inline-block mb-3">
-              <BookOpen className="h-6 w-6 text-green-600" />
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-2">Certified Learning</h3>
-            <p className="text-sm text-gray-600">Earn certificates upon course completion</p>
-          </div>
-          <div className="text-center">
-            <div className="p-3 bg-yellow-100 rounded-lg inline-block mb-3">
-              <LogIn className="h-6 w-6 text-yellow-600" />
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-2">Progress Tracking</h3>
-            <p className="text-sm text-gray-600">Monitor your learning journey and achievements</p>
-          </div>
+        {/* Footer */}
+        <div className="absolute bottom-8 left-0 right-0 text-center">
+          <p className="text-sm text-gray-500">
+            Powered by Burst-Brain Concept
+          </p>
         </div>
+
       </div>
     </div>
   );
