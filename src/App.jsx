@@ -83,8 +83,15 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
 
 
-        {/* Home page without layout for unauthenticated users */}
-        <Route path="/" element={!shouldRedirectToDashboard ? <Home /> : <Navigate to="/overview" replace />} />
+
+        {/* Home page - shows splash for unauthenticated, dashboard for authenticated */}
+        <Route path="/" element={
+          !shouldRedirectToDashboard ? (
+            <Home />
+          ) : (
+            <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} replace />
+          )
+        } />
 
         <Route element={<Layout />}>
           <Route path="/overview" element={<ProtectedRoute><Overview /></ProtectedRoute>} />
