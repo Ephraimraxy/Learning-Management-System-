@@ -57,21 +57,21 @@ const Layout = () => {
   }
 
   return (
-    <div className={`min-h-screen ${isFieldMode ? 'bg-black text-yellow-400' : 'bg-gray-50'} pb-20 md:pb-0 transition-colors duration-300`}>
+    <div className={`min-h-screen ${isFieldMode ? 'bg-black text-white' : 'bg-gray-50'} pb-20 md:pb-0 transition-colors duration-300`}>
       {/* Header */}
       <header className={`${isFieldMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} shadow-sm border-b sticky top-0 z-50 transition-colors duration-300`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center space-x-2">
-              <BookOpen className={`h-8 w-8 ${isFieldMode ? 'text-yellow-400' : 'text-primary-600'}`} />
-              <span className={`text-xl font-bold ${isFieldMode ? 'text-yellow-400' : 'text-gray-900'}`}>LMS</span>
+              <BookOpen className={`h-8 w-8 ${isFieldMode ? 'text-white' : 'text-primary-600'}`} />
+              <span className={`text-xl font-bold ${isFieldMode ? 'text-white' : 'text-gray-900'}`}>LMS</span>
             </Link>
 
             {/* Field Mode Toggle */}
             <button
               onClick={() => setIsFieldMode(!isFieldMode)}
               className={`ml-4 px-3 py-1.5 rounded-full text-xs font-bold flex items-center space-x-1 transition-all ${isFieldMode
-                ? 'bg-yellow-400 text-black hover:bg-yellow-300'
+                ? 'bg-white text-black hover:bg-gray-200'
                 : 'bg-green-100 text-green-800 hover:bg-green-200'
                 }`}
             >
@@ -95,7 +95,7 @@ const Layout = () => {
                   key={item.path}
                   to={item.path}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${isFieldMode
-                    ? 'text-yellow-100 hover:bg-gray-800 hover:text-yellow-400'
+                    ? 'text-white hover:bg-gray-800 hover:text-gray-200'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-primary-600'
                     }`}
                 >
@@ -110,7 +110,7 @@ const Layout = () => {
                 <>
                   <Link
                     to="/notifications"
-                    className={`relative p-2 transition-colors ${isFieldMode ? 'text-yellow-400 hover:text-yellow-200' : 'text-gray-700 hover:text-primary-600'}`}
+                    className={`relative p-2 transition-colors ${isFieldMode ? 'text-white hover:text-white' : 'text-gray-700 hover:text-primary-600'}`}
                   >
                     <Bell className="h-5 w-5" />
                     {unreadCount > 0 && (
@@ -159,7 +159,7 @@ const Layout = () => {
       </main>
 
       {/* Footer */}
-      <footer className={`${isFieldMode ? 'bg-gray-900 border-gray-800 text-yellow-400/60' : 'bg-white border-gray-200 text-gray-600'} border-t mt-12 transition-colors duration-300`}>
+      <footer className={`${isFieldMode ? 'bg-gray-900 border-gray-800 text-white' : 'bg-white border-gray-200 text-gray-600'} border-t mt-12 transition-colors duration-300`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <p className="text-center text-sm">
             © 2025 LMS - Learning Management System. All rights reserved.
@@ -176,7 +176,7 @@ const Layout = () => {
               key={item.path}
               to={item.path}
               className={`group flex flex-col items-center justify-center px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95 ${isFieldMode
-                ? 'bg-gray-900/90 text-yellow-100 hover:bg-yellow-400 hover:text-black border border-yellow-400/30'
+                ? 'bg-gray-900/90 text-white hover:bg-gray-800 hover:text-gray-200 border border-gray-700'
                 : 'bg-white/90 text-gray-700 hover:bg-primary-600 hover:text-white shadow-sm border border-gray-200'
                 }`}
             >
@@ -188,7 +188,7 @@ const Layout = () => {
             <Link
               to={`/profile/${user.uid}`}
               className={`group flex flex-col items-center justify-center px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95 ${isFieldMode
-                ? 'bg-gray-900/90 text-yellow-100 hover:bg-yellow-400 hover:text-black border border-yellow-400/30'
+                ? 'bg-gray-900/90 text-white hover:bg-gray-800 hover:text-gray-200 border border-gray-700'
                 : 'bg-white/90 text-gray-700 hover:bg-primary-600 hover:text-white shadow-sm border border-gray-200'
                 }`}
             >
