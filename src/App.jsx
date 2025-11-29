@@ -46,6 +46,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import VerifyResetCode from './pages/VerifyResetCode';
 import ResetPassword from './pages/ResetPassword';
 import LoadingOverlay from './components/LoadingOverlay';
+import Overview from './pages/Overview';
 
 
 function App() {
@@ -86,6 +87,7 @@ function App() {
         <Route path="/" element={!shouldRedirectToDashboard ? <Home /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} replace />} />
 
         <Route element={<Layout />}>
+          <Route path="/overview" element={<ProtectedRoute><Overview /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
           <Route path="/student/dashboard" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />

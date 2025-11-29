@@ -1,6 +1,6 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { LogOut, BookOpen, Users, FileText, Award, BarChart3, Menu, X, Briefcase, Settings, Bell, MessageSquare, Megaphone, Home, GraduationCap, ClipboardList, CheckSquare } from 'lucide-react';
+import { LogOut, BookOpen, Users, FileText, Award, BarChart3, Menu, X, Briefcase, Settings, Bell, MessageSquare, Megaphone, Home, GraduationCap, ClipboardList, CheckSquare, LayoutDashboard } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getUnreadNotifications } from '../services/notificationService';
 import ChatWidget from './ChatWidget';
@@ -40,13 +40,13 @@ const Layout = () => {
   }, [user]);
 
   const navItems = [
+    { path: '/overview', label: 'Overview', icon: LayoutDashboard },
     { path: '/', label: 'Home', icon: Home },
     { path: '/courses', label: 'Courses', icon: GraduationCap },
     { path: '/batches', label: 'Batches', icon: Users },
     { path: '/quizzes', label: 'Quizzes', icon: ClipboardList },
     { path: '/assignments', label: 'Assignments', icon: CheckSquare },
     { path: '/programs', label: 'Programs', icon: Award },
-    { path: '/jobs', label: 'Jobs', icon: Briefcase },
   ];
 
   const [isFieldMode, setIsFieldMode] = useState(false);
