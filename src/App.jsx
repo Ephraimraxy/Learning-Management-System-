@@ -42,6 +42,10 @@ import EmailVerification from './pages/EmailVerification';
 import LiveClassroom from './pages/LiveClassroom';
 import ProtectedRoute from './components/ProtectedRoute';
 import GetStarted from './pages/GetStarted';
+import ForgotPassword from './pages/ForgotPassword';
+import VerifyResetCode from './pages/VerifyResetCode';
+import ResetPassword from './pages/ResetPassword';
+
 
 function App() {
   const { user, userData, loading, initializeAuth } = useAuthStore();
@@ -68,11 +72,13 @@ function App() {
       }}
     >
       <Routes>
-
-        // ... (existing imports)
-
-        // ... (inside Routes)
         <Route path="/login" element={!shouldRedirectToDashboard ? <Login /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
+        <Route path="/signup" element={!shouldRedirectToDashboard ? <Signup /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
+        <Route path="/verify-email" element={<EmailVerification />} />
+        <Route path="/get-started" element={!shouldRedirectToDashboard ? <GetStarted /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/verify-reset-code" element={<VerifyResetCode />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/signup" element={!shouldRedirectToDashboard ? <Signup /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
         <Route path="/verify-email" element={<EmailVerification />} />
         <Route path="/get-started" element={!shouldRedirectToDashboard ? <GetStarted /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />

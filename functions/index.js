@@ -11,6 +11,9 @@
  */
 
 const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+admin.initializeApp();
+
 const cors = require('cors')({ origin: true });
 
 // node-fetch v3 is ESM-only; lazy import to keep this file CommonJS-friendly.
@@ -156,3 +159,28 @@ exports.chatWithISAC = functions.https.onCall(async (data, context) => {
   }
 });
 */
+
+/**
+ * Admin Reset Password Function
+ * Allows resetting a user's password securely from the backend.
+ * This bypasses the need for the user to know their old password.
+ */
+exports.adminResetPassword = functions.https.onCall(async (data, context) => {
+  const { email, newPassword } = data;
+
+  if (!email || !newPassword) {
+    throw new functions.https.HttpsError('invalid-argument', 'Email and new password are required.');
+  }
+
+  try {
+    const userRecord = await admin.auth().getUserByEmail(email);
+    await admin.auth().updateUser(userRecord.uid, {
+      password: newPassword,
+    });
+
+    return { success: true, message: 'Password updated successfully.' };
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to reset password.');
+  }
+});

@@ -24,7 +24,7 @@ const Login = () => {
 
       // Fetch user data to check if user is registered and get role
       const userDoc = await getDoc(doc(db, 'users', user.uid));
-      
+
       // Check if user document exists (user must be registered)
       if (!userDoc.exists()) {
         await auth.signOut();
@@ -43,7 +43,7 @@ const Login = () => {
       // Check if email is verified (skip for admin/instructor)
       // For OTP verification, we check the Firestore status instead
       const needsVerification = userData.status === 'pendingVerification' && !isAdmin;
-      
+
       if (needsVerification) {
         await auth.signOut();
         toast.error(
@@ -55,7 +55,7 @@ const Login = () => {
         setLoading(false);
         return;
       }
-      
+
       // Also check Firebase Auth email verification as fallback
       if (!user.emailVerified && !isAdmin && userData.status !== 'active') {
         await auth.signOut();
@@ -90,7 +90,7 @@ const Login = () => {
 
       setUser(user);
       toast.success('Logged in successfully!');
-      
+
       // Redirect based on role (admins determined by Firestore role)
       if (isAdmin) {
         navigate('/admin/dashboard');
@@ -99,7 +99,7 @@ const Login = () => {
       }
     } catch (error) {
       let errorMessage = 'An error occurred. Please try again.';
-      
+
       // Map Firebase error codes to user-friendly messages
       switch (error.code) {
         case 'auth/user-not-found':
@@ -134,7 +134,7 @@ const Login = () => {
             errorMessage = error.message || 'An error occurred. Please try again.';
           }
       }
-      
+
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -189,6 +189,14 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end">
+            <div className="text-sm">
+              <Link to="/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
+                Forgot your password?
+              </Link>
             </div>
           </div>
 
