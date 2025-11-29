@@ -4,23 +4,37 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { useAuthStore } from '../stores/authStore';
+import { useLoadingStore } from '../stores/loadingStore';
 import toast from 'react-hot-toast';
 import { BookOpen, AlertCircle } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { setUser } = useAuthStore();
+  const { setUser, initializeAuth } = useAuthStore();
+  const { loading, showLoading, hideLoading } = useLoadingStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    showLoading('Signing in...');
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+
+      // Check if email is verified (Firebase Auth's internal flag)
+      // This is a preliminary check before fetching user data from Firestore
+      if (!user.emailVerified) {
+        await auth.signOut();
+        hideLoading();
+        toast.error(
+          'Please verify your email before signing in. Check your inbox for the verification code.',
+          { duration: 5000 }
+        );
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+        return;
+      }
 
       // Fetch user data to check if user is registered and get role
       const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -93,8 +107,10 @@ const Login = () => {
 
       // Redirect based on role (admins determined by Firestore role)
       if (isAdmin) {
+        hideLoading(); // Added hideLoading
         navigate('/admin/dashboard');
       } else {
+        hideLoading(); // Added hideLoading
         navigate('/student/dashboard');
       }
     } catch (error) {
@@ -137,7 +153,7 @@ const Login = () => {
 
       toast.error(errorMessage);
     } finally {
-      setLoading(false);
+      hideLoading();
     }
   };
 

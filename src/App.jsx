@@ -45,6 +45,7 @@ import GetStarted from './pages/GetStarted';
 import ForgotPassword from './pages/ForgotPassword';
 import VerifyResetCode from './pages/VerifyResetCode';
 import ResetPassword from './pages/ResetPassword';
+import LoadingOverlay from './components/LoadingOverlay';
 
 
 function App() {
@@ -125,6 +126,7 @@ function App() {
           <Route path="/live-classes/:classId" element={<ProtectedRoute><LiveClassroom /></ProtectedRoute>} />
         </Route>
       </Routes>
+      <LoadingOverlay />
     </BrowserRouter>
   );
 }

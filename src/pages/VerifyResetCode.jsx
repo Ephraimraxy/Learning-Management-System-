@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { verifyOTP, sendOTPEmail } from '../services/emailService';
+import { verifyOTP, sendOTPEmail, generateOTP } from '../services/emailService';
+import { useLoadingStore } from '../stores/loadingStore';
 import toast from 'react-hot-toast';
 import { ShieldCheck, ArrowLeft } from 'lucide-react';
 
 const VerifyResetCode = () => {
+    const { showLoading, hideLoading } = useLoadingStore();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const email = searchParams.get('email');
 
     const [otpCode, setOtpCode] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [resending, setResending] = useState(false);
 
     useEffect(() => {
         if (!email) {
@@ -24,43 +24,40 @@ const VerifyResetCode = () => {
         e.preventDefault();
         if (!otpCode || otpCode.length !== 6) return;
 
-        setLoading(true);
+        showLoading('Verifying code...');
         try {
             const result = await verifyOTP(email, otpCode);
 
             if (result.success) {
                 toast.success('Code verified successfully!');
-                // Navigate to reset password page with verified email and code (as a simple token proof)
-                // In a more secure app, we'd get a temp token from backend, but here we pass the code 
-                // and verify it again or just trust the flow for this MVP (since we verified it here).
-                // Better: Pass email and maybe a timestamp or just rely on the next page to call the secure function.
-                // The secure function doesn't verify OTP again, so we must ensure this step is passed.
-                // We can pass a state to the next route.
+                hideLoading();
                 navigate('/reset-password', { state: { email, verified: true } });
             } else {
                 toast.error(result.message || 'Invalid code.');
+                hideLoading();
             }
         } catch (error) {
             console.error('Verification error:', error);
             toast.error('Failed to verify code.');
-        } finally {
-            setLoading(false);
+            hideLoading();
         }
     };
 
     const handleResend = async () => {
-        setResending(true);
+        showLoading('Resending code...');
         try {
-            const result = await sendOTPEmail(email);
+            const otp = generateOTP();
+            const result = await sendOTPEmail(email, otp);
             if (result.success) {
                 toast.success('New code sent!');
+                hideLoading();
             } else {
                 toast.error(result.message || 'Failed to resend code.');
+                hideLoading();
             }
         } catch (error) {
             toast.error('Error resending code.');
-        } finally {
-            setResending(false);
+            hideLoading();
         }
     };
 
@@ -103,20 +100,19 @@ const VerifyResetCode = () => {
 
                     <button
                         type="submit"
-                        disabled={loading || otpCode.length !== 6}
+                        disabled={otpCode.length !== 6}
                         className="btn btn-primary w-full flex justify-center"
                     >
-                        {loading ? 'Verifying...' : 'Verify Code'}
+                        Verify Code
                     </button>
 
                     <div className="text-center">
                         <button
                             type="button"
                             onClick={handleResend}
-                            disabled={resending}
                             className="text-sm text-primary-600 hover:text-primary-500 font-medium"
                         >
-                            {resending ? 'Sending...' : "Didn't receive code? Resend"}
+                            Didn't receive code? Resend
                         </button>
                     </div>
                 </form>

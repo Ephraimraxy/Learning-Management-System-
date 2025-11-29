@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { useLoadingStore } from '../stores/loadingStore';
 import toast from 'react-hot-toast';
 import { Lock, CheckCircle } from 'lucide-react';
 
 const ResetPassword = () => {
+    const { showLoading, hideLoading } = useLoadingStore();
     const navigate = useNavigate();
     const location = useLocation();
     const { email, verified } = location.state || {};
 
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
     useEffect(() => {
@@ -34,7 +35,7 @@ const ResetPassword = () => {
             return;
         }
 
-        setLoading(true);
+        showLoading('Resetting your password...');
         try {
             const functions = getFunctions();
             const adminResetPassword = httpsCallable(functions, 'adminResetPassword');
@@ -44,17 +45,18 @@ const ResetPassword = () => {
             if (result.data.success) {
                 setSuccess(true);
                 toast.success('Password reset successfully!');
+                hideLoading();
                 setTimeout(() => {
                     navigate('/login');
                 }, 3000);
             } else {
                 toast.error(result.data.message || 'Failed to reset password.');
+                hideLoading();
             }
         } catch (error) {
             console.error('Reset password error:', error);
             toast.error('Failed to reset password. Please try again.');
-        } finally {
-            setLoading(false);
+            hideLoading();
         }
     };
 
@@ -136,10 +138,9 @@ const ResetPassword = () => {
 
                     <button
                         type="submit"
-                        disabled={loading}
                         className="btn btn-primary w-full flex justify-center"
                     >
-                        {loading ? 'Resetting...' : 'Reset Password'}
+                        Reset Password
                     </button>
                 </form>
             </div>

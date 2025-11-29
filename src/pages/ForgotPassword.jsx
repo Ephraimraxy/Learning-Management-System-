@@ -3,17 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { sendOTPEmail, generateOTP } from '../services/emailService';
+import { useLoadingStore } from '../stores/loadingStore';
 import toast from 'react-hot-toast';
 import { KeyRound, ArrowLeft, Mail } from 'lucide-react';
 
 const ForgotPassword = () => {
+    const { showLoading, hideLoading } = useLoadingStore();
     const [email, setEmail] = useState('');
-    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
+        showLoading('Checking your email...');
 
         try {
             // 1. Check if user exists in Firestore
@@ -23,15 +24,29 @@ const ForgotPassword = () => {
 
             if (querySnapshot.empty) {
                 toast.error('No account found with this email address.');
-                setLoading(false);
+                hideLoading();
                 return;
+            }
+
+            // 2. Send OTP
+            showLoading('Sending verification code...');
+            const otp = generateOTP();
+            const result = await sendOTPEmail(email, otp);
+
+            if (result.success) {
+                toast.success('Verification code sent to your email!');
+                hideLoading();
+                // Navigate to verification page with email in state/query
+                navigate(`/verify-reset-code?email=${encodeURIComponent(email)}`);
+            } else {
+                toast.error(result.message || 'Failed to send verification code.');
+                hideLoading();
             }
 
         } catch (error) {
             console.error('Error in forgot password flow:', error);
             toast.error('An error occurred. Please try again.');
-        } finally {
-            setLoading(false);
+            hideLoading();
         }
     };
 
@@ -76,10 +91,9 @@ const ForgotPassword = () => {
 
                     <button
                         type="submit"
-                        disabled={loading}
                         className="btn btn-primary w-full flex justify-center"
                     >
-                        {loading ? 'Sending Code...' : 'Send Verification Code'}
+                        Send Verification Code
                     </button>
                 </form>
 

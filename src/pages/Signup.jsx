@@ -3,16 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { doc, setDoc, getDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { sendOTPEmail, generateOTP } from '../services/emailService';
+import { useLoadingStore } from '../stores/loadingStore';
 import toast from 'react-hot-toast';
 import { BookOpen } from 'lucide-react';
 import { encryptValue } from '../utils/encryption';
 import { shouldUseBackendEmail, getEmailApiBaseUrl } from '../utils/emailBackend';
 
 const Signup = () => {
+  const { showLoading, hideLoading } = useLoadingStore();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [emailServiceStatus, setEmailServiceStatus] = useState({
     checking: true,
     online: false,
@@ -72,20 +73,20 @@ const Signup = () => {
       return;
     }
 
-    setLoading(true);
+    showLoading('Creating your account...');
 
     try {
       // Check if email is already registered (query users collection by email)
       const usersQuery = query(collection(db, 'users'), where('email', '==', email));
       const usersSnapshot = await getDocs(usersQuery);
-      
+
       if (!usersSnapshot.empty) {
         const userDoc = usersSnapshot.docs[0];
         const userData = userDoc.data();
         // Check if it's a verified account
         if (userData.registered && userData.status === 'active') {
           toast.error('This email is already registered. Please sign in instead.');
-          setLoading(false);
+          hideLoading();
           return;
         }
         // If pending/not verified, allow re-signup (will overwrite temporary data)
@@ -98,13 +99,13 @@ const Signup = () => {
         const createdAt = new Date(pendingData.createdAt);
         const now = new Date();
         const hoursSinceCreation = (now - createdAt) / (1000 * 60 * 60);
-        
+
         // If pending signup is less than 24 hours old, allow resending OTP
         if (hoursSinceCreation < 24) {
           // Generate new OTP
           const otpCode = generateOTP();
           const encryptedPassword = encryptValue(password);
-          
+
           // Update pending signup with new data
           await setDoc(doc(db, 'pendingSignups', email), {
             name,
@@ -115,23 +116,23 @@ const Signup = () => {
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
             verificationStatus: 'otpResent',
           }, { merge: true });
-          
+
           // Send OTP email
           const emailResult = await sendOTPEmail(email, otpCode);
-          
+
           if (!emailResult.success) {
             toast.error('Failed to send verification email. Please try again.');
-            setLoading(false);
+            hideLoading();
             return;
           }
-          
+
           // Store in sessionStorage for verification page
           sessionStorage.setItem('pendingVerificationEmail', email);
           sessionStorage.setItem('pendingVerificationPassword', password);
-          
+
           navigate('/verify-email', { replace: true });
           toast.success('New OTP code sent to your email!');
-          setLoading(false);
+          hideLoading();
           return;
         }
       }
@@ -154,25 +155,26 @@ const Signup = () => {
 
       // Send OTP email
       const emailResult = await sendOTPEmail(email, otpCode);
-      
+
       if (!emailResult.success) {
         // If email sending fails, delete the pending signup
         await deleteDoc(doc(db, 'pendingSignups', email));
         toast.error('Failed to send verification email. Please try again.');
-        setLoading(false);
+        hideLoading();
         return;
       }
 
       // Store email and password in sessionStorage for verification page
       sessionStorage.setItem('pendingVerificationEmail', email);
       sessionStorage.setItem('pendingVerificationPassword', password);
-      
+
       // Redirect to OTP verification page
       navigate('/verify-email', { replace: true });
       toast.success('OTP code sent to your email!');
+      hideLoading();
     } catch (error) {
       let errorMessage = 'An error occurred. Please try again.';
-      
+
       // Map Firebase error codes to user-friendly messages
       switch (error.code) {
         case 'auth/email-already-in-use':
@@ -201,10 +203,11 @@ const Signup = () => {
             errorMessage = error.message || 'An error occurred. Please try again.';
           }
       }
-      
+
       toast.error(errorMessage);
+      hideLoading();
     } finally {
-      setLoading(false);
+      hideLoading();
     }
   };
 
@@ -291,10 +294,10 @@ const Signup = () => {
           <div>
             <button
               type="submit"
-              disabled={loading || emailServiceStatus.checking || !emailServiceStatus.online}
+              disabled={emailServiceStatus.checking || !emailServiceStatus.online}
               className="btn btn-primary w-full"
             >
-              {loading ? 'Creating account...' : 'Sign up'}
+              Sign up
             </button>
           </div>
         </form>
