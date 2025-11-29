@@ -79,9 +79,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-reset-code" element={<VerifyResetCode />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/signup" element={!shouldRedirectToDashboard ? <Signup /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
-        <Route path="/verify-email" element={<EmailVerification />} />
-        <Route path="/get-started" element={!shouldRedirectToDashboard ? <GetStarted /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} />} />
+
 
         {/* Home page without layout for unauthenticated users */}
         <Route path="/" element={!shouldRedirectToDashboard ? <Home /> : <Navigate to={userData?.role === 'admin' || userData?.role === 'instructor' ? '/admin/dashboard' : '/student/dashboard'} replace />} />

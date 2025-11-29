@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { sendOTPEmail } from '../services/emailService';
+import { sendOTPEmail, generateOTP } from '../services/emailService';
 import toast from 'react-hot-toast';
 import { KeyRound, ArrowLeft, Mail } from 'lucide-react';
 
@@ -25,17 +25,6 @@ const ForgotPassword = () => {
                 toast.error('No account found with this email address.');
                 setLoading(false);
                 return;
-            }
-
-            // 2. Send OTP
-            const result = await sendOTPEmail(email);
-
-            if (result.success) {
-                toast.success('Verification code sent to your email!');
-                // Navigate to verification page with email in state/query
-                navigate(`/verify-reset-code?email=${encodeURIComponent(email)}`);
-            } else {
-                toast.error(result.message || 'Failed to send verification code.');
             }
 
         } catch (error) {
