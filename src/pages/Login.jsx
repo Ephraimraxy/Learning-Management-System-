@@ -23,19 +23,6 @@ const Login = () => {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Check if email is verified (Firebase Auth's internal flag)
-      // This is a preliminary check before fetching user data from Firestore
-      if (!user.emailVerified) {
-        await auth.signOut();
-        hideLoading();
-        toast.error(
-          'Please verify your email before signing in. Check your inbox for the verification code.',
-          { duration: 5000 }
-        );
-        navigate(`/verify-email?email=${encodeURIComponent(email)}`);
-        return;
-      }
-
       // Fetch user data to check if user is registered and get role
       const userDoc = await getDoc(doc(db, 'users', user.uid));
 
@@ -46,7 +33,7 @@ const Login = () => {
           'Account not found. Please sign up first to create an account.',
           { duration: 5000 }
         );
-        setLoading(false);
+        hideLoading();
         navigate('/signup');
         return;
       }
@@ -54,8 +41,7 @@ const Login = () => {
       const userData = userDoc.data();
       const isAdmin = userData?.role === 'admin' || userData?.role === 'instructor';
 
-      // Check if email is verified (skip for admin/instructor)
-      // For OTP verification, we check the Firestore status instead
+      // Check if email is verified using Firestore status (skip for admin/instructor)
       const needsVerification = userData.status === 'pendingVerification' && !isAdmin;
 
       if (needsVerification) {
@@ -64,21 +50,9 @@ const Login = () => {
           'Please verify your email with the OTP code before signing in. Check your inbox for the verification code.',
           { duration: 5000 }
         );
+        hideLoading();
         // Redirect to OTP verification page
         navigate(`/verify-email?email=${encodeURIComponent(email)}`);
-        setLoading(false);
-        return;
-      }
-
-      // Also check Firebase Auth email verification as fallback
-      if (!user.emailVerified && !isAdmin && userData.status !== 'active') {
-        await auth.signOut();
-        toast.error(
-          'Please verify your email before signing in. Check your inbox for the verification code.',
-          { duration: 5000 }
-        );
-        navigate(`/verify-email?email=${encodeURIComponent(email)}`);
-        setLoading(false);
         return;
       }
 
